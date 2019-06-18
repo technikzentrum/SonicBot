@@ -1,4 +1,4 @@
-# GyroRobot
+# SonicBot
 
 Use the ESP-12E WiFi module and the touch screen of your smartphone to control a robot
 
