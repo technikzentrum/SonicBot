@@ -4,45 +4,100 @@
 <head>
 	<meta charset="utf-8" />
 	<title>Gesture Control </title>
-
-<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0">
 
 <style>
-#firstc, #secc, #thirdc {  width: 290px; height: 150px; font-size:28px;color:silver; text-align:center; padding-top: 30px;border-radius: 6px; margin: 1em auto}
-#secc { cursor:pointer}
-td { padding: 5px 16px; border:none; }
+	#firstc, #secc, #thirdc {
+		width: 290px;
+		height: 150px;
+		font-size:28px;
+		color: silver;
+		text-align: center;
+		padding-top: 30px;
+		border-radius: 6px;
+		margin: 1em auto
+	}
 
-@media (min-width:720px) {
-	.flexrow { display: flex; display: ms-flexbox; max-width: 600px; margin: 1em auto}
-}
+	#secc {
+		cursor:pointer
+	}
 
-.touchsquare { width: 250px; height: 120px; background: ivory; border:1px solid silver; margin: 1em auto; outline: none; -webkit-tap-highlight-color: transparent;}
+	td {
+		padding: 5px 16px;
+		border:none;
+	}
 
-.startmove {top:0px; z-index: -1; background: cornsilk; width: 100%; height: 100%; margin:1em auto; border: 1px solid gainsboro; font-size:1.6em; text-align: center; color: gray; padding-top: 30px; box-sizing: border-box;}
+	h1 {
+		color: #AFC709;
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+		display: block;
+		font-size: 20vmin;
+		margin-top: 0em;
+		margin-bottom: 0.5em;
+		margin-left: 0;
+		margin-right: 0;
+		font-weight: bold;
+	}
 
-#moves {
-position:absolute; 
-top: 0px;
-}
+	@media (min-width:720px) {
+		.flexrow {
+			display: flex;
+			display: ms-flexbox;
+			max-width: 600px;
+			margin: 1em auto
+		}
+	}
 
-body, .startmove, html {
-  width: 100%;
-  height: 100%;
-  margin: 0px;
-  overflow: hidden;
-}
+	.touchsquare {
+		 width: 250px;
+		 height: 120px;
+		 background: ivory;
+		 border: 1px solid silver;
+		 margin: 1em auto;
+		 outline: none;
+		 -webkit-tap-highlight-color: transparent;
+	 }
+
+	.startmove {
+		top:0px;
+		z-index: -1;
+		background-color: #353E4B;
+		width: 100%;
+		height: 100%;
+		margin:1em auto;
+		border: 1px solid gainsboro;
+		font-size:1.6em;
+		text-align: center;
+		color: #AFC709;
+		padding-top: 30px;
+		box-sizing:
+		border-box;
+	}
+
+	#moves {
+		position:absolute;
+		top: 0px;
+	}
+
+	body, .startmove, html {
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	  width: 100%;
+	  height: 100%;
+	  margin: 0px;
+	  overflow: hidden;
+	}
 </style>
 
 </head>
 
 <body class="cat-js-web">
   <div class="startmove">
-  	TOUCH and MOVE!
+  	<h1>TOUCH and MOVE!</h1>
   </div>
-   
+
   <pre class="conso" id="moves"></pre>
-  
-  
+
+
   <script>
   var  startmove = document.querySelector('.startmove');
   var  moves = document.getElementById('moves');
@@ -50,7 +105,7 @@ body, .startmove, html {
   var  starty = 0;
   var  dist = 0;
   var  max = Math.round(Math.min(startmove.offsetWidth, startmove.offsetHeight) * 0.8);
-  
+
   startmove.addEventListener('touchstart', function(eve){
   	var  touchobj = eve.changedTouches[0]; // erster Finger
   	startx = parseInt(touchobj.clientX); // X/Y-Koordinaten relativ zum Viewport
@@ -58,46 +113,46 @@ body, .startmove, html {
   	moves.innerHTML = 'touchstart bei ClientX: ' + startx + 'px ClientY: ' + starty + "px";
   	eve.preventDefault();
   });
-  
+
   startmove.addEventListener('touchmove', function(eve){
   	var  touchobj = eve.changedTouches[0]; // erster Finger
   	var  distx = parseInt(touchobj.clientX) - startx;
   	var  disty = parseInt(touchobj.clientY) - starty;
-    
+
     if (Math.abs(distx) > max) {
       distx = Math.sign(distx) * max;
     }
-    
+
     if (Math.abs(disty) > max) {
       disty = Math.sign(disty) * max;
     }
-    
+
     distx = Math.round(distx / max * 90.0) + 90;
     disty = Math.round(disty / max * 90.0) + 90;
     sendValues(distx, disty);
-    
+
   	moves.innerHTML = 'touchmove horizontal: ' + distx + 'px vertikal: ' + disty + 'px';
   /**
   	for (var i=0; i < eve.changedTouches.length; i++) {
        document.querySelector("#touches").innerHTML += "changedTouches[" + i + "].identifier = " + eve.changedTouches[i].identifier + "<br>";
-     }  
-  **/  
+     }
+  **/
   	eve.preventDefault();
   });
-  
+
   startmove.addEventListener('touchend', function(eve){
   	var touchobj = eve.changedTouches[0]; // reference first touch point for this event
   	moves.innerHTML = 'touchend bei X-Koordinate: ' + touchobj.clientX + 'px Y-Koordinate: ' + touchobj.clientY + 'px';
   	eve.preventDefault();
-    
+
     sendValues(90,90);
   });
-  
-  
+
+
   function sendValues(x, y) {
       var xhttp = new XMLHttpRequest();
       //x and y swapped on purpose
-      xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));                 
+      xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
     	xhttp.send();
   }
   </script>

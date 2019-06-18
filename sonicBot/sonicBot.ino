@@ -15,11 +15,10 @@
 #define DEAD_BAND 200
 
 //Defines for US
-#define debugLED 13 //D
-int trigger = D5; //Trigger-Pin US
-int echo = D6; // Echo-Pin US
-long dauer = 0; // Das Wort dauer ist jetzt eine Variable, unter der die Zeit gespeichert wird, die eine Schallwelle bis zur Reflektion und zurück benötigt. Startwert ist hier 0.
-long entfernung = 0; // Das Wort „entfernung“ ist jetzt die variable, unter der die berechnete Entfernung gespeichert wird. Info: Anstelle von „int“ steht hier vor den beiden Variablen „long“. Das hat den Vorteil, dass eine größere Zahl gespeichert werden kann. Nachteil: Die Variable benötigt mehr Platz im Speicher.
+int trigger = D5;
+int echo = D6;
+long duration = 0;
+long distance = 0;
 
 
 Ticker checkIPAddress;
@@ -30,9 +29,8 @@ const char* htmlRobotInUse = "/robotInUse.html";
 int angleX = 90;
 int angleY = 90;
 bool deviceIsConnected = false;
-bool manualMode = false;
+bool manualMode = true;
 String currentClientIPAddress;
-
 
 AsyncWebServer server(80);
 
@@ -70,6 +68,9 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   }
 }
 
+/**
+   Function to convert the touch inputs from the Website to a motor speed.
+*/
 int angleToMotorSpeed (int angle) {
   long motorSpeed = 0;
   motorSpeed = angle * (1023 / 45) - 2048;
@@ -82,6 +83,9 @@ int angleToMotorSpeed (int angle) {
   return motorSpeed;
 }
 
+/**
+   Function to check if a connection from a client is still alive.
+*/
 void checkForIPAddress() {
   if (currentClientIPAddress != "") {
     Serial.println("Reset IP Address");
@@ -104,23 +108,25 @@ void moveWheels() {
   }
 }
 
+/**
+   Function to receive the distance measured by the us-sensor in cm
+*/
 long getUSDistance() {
   digitalWrite(trigger, LOW); //Hier nimmt man die Spannung für kurze Zeit vom Trigger-Pin, damit man später beim senden des Trigger-Signals ein rauschfreies Signal hat.
-  delay(5); //Dauer: 5 Millisekunden
+  delay(5); //duration: 5 Millisekunden
   digitalWrite(trigger, HIGH); //Jetzt sendet man eine Ultraschallwelle los.
   delay(10); //Dieser „Ton“ erklingt für 10 Millisekunden.
   digitalWrite(trigger, LOW);//Dann wird der „Ton“ abgeschaltet.
-  dauer = pulseIn(echo, HIGH); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
-  entfernung = (dauer / 2) * 0.03432; //Nun berechnet man die Entfernung in Zentimetern. Man teilt zunächst die Zeit durch zwei (Weil man ja nur eine Strecke berechnen möchte und nicht die Strecke hin- und zurück). Den Wert multipliziert man mit der Schallgeschwindigkeit in der Einheit Zentimeter/Mikrosekunde und erhält dann den Wert in Zentimetern.
-  return entfernung;
+  duration = pulseIn(echo, HIGH); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
+  distance = (duration / 2) * 0.03432; //Nun berechnet man die distance in Zentimetern. Man teilt zunächst die Zeit durch zwei (Weil man ja nur eine Strecke berechnen möchte und nicht die Strecke hin- und zurück). Den Wert multipliziert man mit der Schallgeschwindigkeit in der Einheit Zentimeter/Mikrosekunde und erhält dann den Wert in Zentimetern.
+  return distance;
 }
 
 void setup()
 {
-  Serial.begin (115200); //Serielle kommunikation starten, damit man sich später die Werte am serial monitor ansehen kann.
+  Serial.begin (115200); //Start serial communication
   Serial.println("Setup Begin");
   //Initialize H bridge
-  pinMode(debugLED, OUTPUT);
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
   pinMode(in1, OUTPUT);
@@ -133,8 +139,8 @@ void setup()
   digitalWrite(in3, LOW);
   digitalWrite(in4, LOW);
   //Init US
-  pinMode(trigger, OUTPUT); // Trigger-Pin ist ein Ausgang
-  pinMode(echo, INPUT); // Echo-Pin ist ein Eingang
+  pinMode(trigger, OUTPUT);
+  pinMode(echo, INPUT);
 
   //Initialize File System
   if (SPIFFS.begin())
@@ -168,8 +174,9 @@ void setup()
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
 
 
-
-
+  /**
+     Main server part starts here.
+  */
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     if (currentClientIPAddress == "" || currentClientIPAddress == request->client()->remoteIP().toString()) {
       currentClientIPAddress = request->client()->remoteIP().toString();
@@ -211,8 +218,7 @@ void setup()
   server.begin();
 
   //Attach Timer Interrput to check IP Address
-  checkIPAddress.attach(2, checkForIPAddress); //Use <strong>attach_ms</strong> if you need time in ms
-
+  checkIPAddress.attach(2, checkForIPAddress);
 
   Serial.println("Setup Finished");
 }
@@ -232,27 +238,16 @@ void loop()
       } else {
         rightMotor = rightMotor - steer * rightMotor;
       }
-
-      //Serial.print(leftMotor);
-      //Serial.print(" ");
-      //Serial.println(rightMotor);
       setMotorSpeed(leftMotor, rightMotor);
-      //Serial.println(getUSDistance());;
     }
   } else {
-    long distance = getUSDistance(); 
-    Serial.println(distance);
-    if ((distance <= 50) && (distance >= 30)) {
-      setMotorSpeed(0,1023);
-      delay(3000);
-    } else if (distance < 30) {
-      setMotorSpeed(-1023,-1023);
-      delay(1000);
-    } else {
-      setMotorSpeed(1023,1023);
-      delay(100);
-    }
-    
+    /**
+       TODO: Implement code for us-sensor
+       The following functions might be helpful:
+           long distance = getUSDistance();         //Get us-distance in cm
+           Serial.println(distance);                //print distance to console
+           setMotorSpeed(1023, 1023);               //set motor speed for left and right wheel
+           delay(100)                               //Add additional delay
+    */
   }
-
 }
