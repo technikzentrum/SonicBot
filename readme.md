@@ -47,5 +47,5 @@ Echo    | D6  (GPIO12)
 - Upload the Arduino Sketch File with the recommended board settings.
 - Upload the html file by cklicking on "Tools" --> "ESP8266 Sketch Data Upload"
 - Connect to the Wifi network created by the ESP
-- Open your webbrowser and go to 192.168.4.1
+- Open your webbrowser and navigate to 192.168.4.1
 - On Android devices: You may have to disable mobile data usage in order to connect to the local IP-Address
