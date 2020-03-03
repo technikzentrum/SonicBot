@@ -1,8 +1,9 @@
 //#include "WiFi.h"
 #include "ESPAsyncWebServer.h"
 #include "FS.h"   //Include File System Headers
-#include "SSD1306Spi.h"
+//#include "SSD1306Spi.h"
 #include <ESP8266HTTPClient.h>
+#include <ArduinoOTA.h>
 #include <Ticker.h>  //Ticker Library for timer Interrupt
 
 //Defines for H bridge
@@ -14,15 +15,21 @@
 #define enB 5 //D1
 #define DEAD_BAND 200
 
+//Defines for Arduino OTA
+//uncomment line to enable OTA update
+#define OTAUpdate
+
 //Defines for US
 int trigger = D5;
 int echo = D6;
 long duration = 0;
 long distance = 0;
 
+//ChangeMe
+String botName = "myBot";
+String botPassword = "";
 
 Ticker checkIPAddress;
-
 
 const char* filename = "/index.html";
 const char* htmlRobotInUse = "/robotInUse.html";
@@ -142,6 +149,8 @@ void setup()
   pinMode(trigger, OUTPUT);
   pinMode(echo, INPUT);
 
+
+
   //Initialize File System
   if (SPIFFS.begin())
   {
@@ -166,17 +175,62 @@ void setup()
   WiFi.setAutoConnect(0);                    //Enables or Disaple WiFi Quick Connect
 
   //Initialize WiFi Settings
-  WiFi.softAP("SchulRobotAP", ""); //Create WiFi hotspot
+  WiFi.softAP(botName, botPassword); //Create WiFi hotspot
   WiFi.mode(WIFI_AP);
   Serial.print("Access Point \"");
   Serial.println("\" started");
   Serial.print("IP address:\t");
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
 
+  //Arduino OTA
+#ifdef OTAUpdate
+  ArduinoOTA.setHostname("BOTOTA");
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else { // U_FS
+      type = "filesystem";
+    }
+
+    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      Serial.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      Serial.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      Serial.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      Serial.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      Serial.println("End Failed");
+    }
+  });
+  ArduinoOTA.begin();
+#endif
+
 
   /**
      Main server part starts here.
   */
+
+  //Function to execute if Button on Homepage was pressed
+  server.on("/button/", HTTP_GET, [](AsyncWebServerRequest * request) {
+    Serial.println("Button pressed");
+    request -> send(200);
+  });
+
+  //Function to execute if user makes touch controls on mobile screen
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     if (currentClientIPAddress == "" || currentClientIPAddress == request->client()->remoteIP().toString()) {
       currentClientIPAddress = request->client()->remoteIP().toString();
@@ -206,7 +260,7 @@ void setup()
       } else {
         request -> send(200);
       }
-      checkIPAddress.attach(2, checkForIPAddress); //Enable Timer again
+      checkIPAddress.attach_ms(500, checkForIPAddress); //Enable Timer again
     } else {
       request->send(SPIFFS, "/robotInUse.html");
       Serial.print("Declined Connection from: ");
@@ -218,7 +272,7 @@ void setup()
   server.begin();
 
   //Attach Timer Interrput to check IP Address
-  checkIPAddress.attach(2, checkForIPAddress);
+  checkIPAddress.attach_ms(500, checkForIPAddress);
 
   Serial.println("Setup Finished");
 }
@@ -227,6 +281,7 @@ void setup()
 void loop()
 {
   if (manualMode) {
+
     if (deviceIsConnected) {
       int leftMotor = angleToMotorSpeed(angleX);
       int rightMotor = leftMotor;
@@ -250,4 +305,7 @@ void loop()
            delay(100)                               //Add additional delay
     */
   }
+#ifdef OTAUpdate
+  ArduinoOTA.handle();
+#endif
 }
