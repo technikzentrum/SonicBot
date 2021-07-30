@@ -132,7 +132,36 @@
   <pre class="conso" id="moves"></pre>
 
   <script>
+  var gateway = `ws://${window.location.hostname}/ws`;
+  var websocket;
+  function initWebSocket() {
+    console.log('Trying to open a WebSocket connection...');
+    websocket = new WebSocket(gateway);
+    websocket.onopen    = onOpen;
+    websocket.onclose   = onClose;
+    websocket.onmessage = onMessage; // <-- add this line
+  }
+  function onOpen(event) {
+    console.log('Connection opened');
+  }
 
+  function onClose(event) {
+    console.log('Connection closed');
+    setTimeout(initWebSocket, 2000);
+  }
+  function onMessage(event) {
+    var state;
+    if (event.data == "1"){
+      state = "ON";
+    }
+    else{
+      state = "OFF";
+    }
+  }
+  window.addEventListener('load', onLoad);
+  function onLoad(event) {
+    initWebSocket();
+  }
 
   var  startmove = document.querySelector('.startmove');
   var  moves = document.getElementById('moves');
@@ -211,10 +240,11 @@
 
 
   function sendValues(x, y) {
-      var xhttp = new XMLHttpRequest();
+		websocket.send('{"angleX":'+Math.round(y)+',angleY:'+Math.round(x)+'}');
+      //var xhttp = new XMLHttpRequest();
       //x and y swapped on purpose
-      xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
-    	xhttp.send();
+      //xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
+    	//xhttp.send();
   }
 
 	function sendLastValues() {
@@ -223,10 +253,7 @@
 	}
 
 	function buttonPress() {
-		var xhttp = new XMLHttpRequest();
-		console.log("press");
-		xhttp.open('GET', 'button/?id=1');
-		xhttp.send();
+		websocket.send('{"button":12345}');
 	}
   </script>
 

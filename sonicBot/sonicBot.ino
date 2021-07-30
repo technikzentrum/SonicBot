@@ -11,7 +11,8 @@
 #include "ESPAsyncWebServer.h"//Webserver
 #include "FS.h"   //Include File System Headers
 #include <ArduinoOTA.h>// Wlan Updates
-#include <Ticker.h>  //Ticker Library for timer Interrupt
+#include <ArduinoJson.h>
+
 
 //#######################   GLOBAL Varriables
 
@@ -30,14 +31,14 @@ long duration = 0;
 long distance = 0;
 
 // ### Heartbeat ###
-Ticker checkIPAddress;
 bool deviceIsConnected = false;
-String currentClientIPAddress;
 
 // ### Webserver ###
 AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
 const char* filename = "/index.html";
 const char* htmlRobotInUse = "/robotInUse.html";
+DynamicJsonDocument doc(2048);
 
 // ### Bot Status ###
 int angleX = 90;
@@ -74,7 +75,7 @@ bool manualMode = true;
 #endif
 
 //#######################   Defines for Arduino OTA
-#define OTAUpdate //uncomment line to enable OTA update
+//#define OTAUpdate //uncomment line to enable OTA update
 
 
 
@@ -180,21 +181,48 @@ int angleToMotorSpeed (int angle) {
   return motorSpeed;
 }
 
-/**
-   Function to check if a connection from a client is still alive.
-*/
-void checkForIPAddress() {
-  if (currentClientIPAddress != "") {
-    #ifdef DEBUG
-    Serial.println("Reset IP Address");
-    #endif
+// Websoket
+void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+  if(type == WS_EVT_CONNECT){
+    deviceIsConnected = true;
+    Serial.println("Websocket client connection received");
+    client->text("Hello from ESP32 Server");
+  } else if(type == WS_EVT_DISCONNECT){
     deviceIsConnected = false;
-    currentClientIPAddress = "";
     angleX = 90;
     angleY = 90;
     int leftMotor = angleToMotorSpeed(angleX);
     int rightMotor = leftMotor;
     setMotorSpeed(leftMotor, rightMotor);
+    Serial.println("Client disconnected");
+  } else if(type == WS_EVT_DATA) {
+    Serial.println("Got data");
+    AwsFrameInfo *info = (AwsFrameInfo*)arg;
+    if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+      DeserializationError error = deserializeJson(doc, (char*)data);
+      if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.f_str());
+        return;
+      } else {
+        if (doc.containsKey("button")) {
+          long time = doc["button"];
+        }
+        if (doc.containsKey("angleX") && doc.containsKey("angleY")) {
+          angleX = doc["angleX"];
+          angleY = doc["angleY"];
+          int leftMotor = angleToMotorSpeed(angleX);
+          int rightMotor = leftMotor;
+          double steer = angleToMotorSpeed(angleY) / 1023.0;
+          if (steer < 0) {
+            leftMotor = leftMotor + steer * leftMotor;
+          } else {
+            rightMotor = rightMotor - steer * rightMotor;
+          }
+          setMotorSpeed(leftMotor, rightMotor);
+        }
+      }
+    }
   }
 }
 
@@ -216,8 +244,10 @@ long getUSDistance() {
 //#######################   SETUP
 void setup()
 {
+  //Serial.begin (115200);
   #ifdef DEBUG
   Serial.begin (115200); //Start serial communication
+  Serial.println(doc.capacity());
   Serial.println("Setup Begin\nPindefines");
   #endif
   //Initialize H bridge
@@ -338,61 +368,17 @@ void setup()
      Main server part starts here.
   */
 
-  //Function to execute if Button on Homepage was pressed
-  server.on("/button/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    #ifdef DEBUG
-    Serial.println("Button pressed");
-    #endif
-    request -> send(200);
-  });
-
   //Function to execute if user makes touch controls on mobile screen
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    if (currentClientIPAddress == "" || currentClientIPAddress == request->client()->remoteIP().toString()) {
-      currentClientIPAddress = request->client()->remoteIP().toString();
-      checkIPAddress.detach(); //Disable Timer
-      deviceIsConnected = true;
-      int paramsNr = request->params();
-      //Serial.println(paramsNr);
-      for (int i = 0; i < paramsNr; i++) {
-        AsyncWebParameter* p = request->getParam(i);
-        if (p->name() == "angleX") {
-          angleX = p->value().toInt();
-          //   Serial.print("Angle x:");
-          //   Serial.println(angleX);
-        } else if (p->name() == "angleY") {
-          angleY = p->value().toInt();
-          //    Serial.print("Angle y:");
-          //    Serial.println(angleY);
-        } else {
-          #ifdef DEBUG
-          Serial.print("unknown name: ");
-          Serial.print(p->name());
-          Serial.print(", value to int: ");
-          Serial.println(p->value().toInt());
-          #endif
-        }
-      }
-      if (request -> params() == 0) {
-        request->send(SPIFFS, "/index.html");
-      } else {
-        request -> send(200);
-      }
-      checkIPAddress.attach_ms(500, checkForIPAddress); //Enable Timer again
-    } else {
-      request->send(SPIFFS, "/robotInUse.html");
-      #ifdef DEBUG
-      Serial.print("Declined Connection from: ");
-      Serial.print(request->client()->remoteIP().toString());
-      Serial.print(", The following device is already connected: ");
-      Serial.println(currentClientIPAddress);
-      #endif
-    }
+      //deviceIsConnected = true;
+      request->send(SPIFFS, "/index.html");
   });
+  // Websoket
+  ws.onEvent(onWsEvent);
+  server.addHandler(&ws);
+  
   server.begin();
 
-  //Attach Timer Interrput to check IP Address
-  checkIPAddress.attach_ms(500, checkForIPAddress);
   #ifdef DEBUG
   Serial.println("Setup Finished");
   #endif
@@ -402,20 +388,7 @@ void setup()
 void loop()
 {
   if (manualMode) {
-
-    if (deviceIsConnected) {
-      int leftMotor = angleToMotorSpeed(angleX);
-      int rightMotor = leftMotor;
-      //Serial.print(leftMotor);
-      //Serial.println(leftMotor);
-      double steer = angleToMotorSpeed(angleY) / 1023.0;
-      if (steer < 0) {
-        leftMotor = leftMotor + steer * leftMotor;
-      } else {
-        rightMotor = rightMotor - steer * rightMotor;
-      }
-      setMotorSpeed(leftMotor, rightMotor);
-    }
+    yield();
   } else {
     /**
        TODO: Implement code for us-sensor
