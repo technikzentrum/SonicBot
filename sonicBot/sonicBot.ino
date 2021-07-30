@@ -1,12 +1,66 @@
-//#include "WiFi.h"
-#include "ESPAsyncWebServer.h"
+//#######################   Includes
+#ifdef ESP32      //#####   ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include "SPIFFS.h"
+#elif defined(ESP8266)//#   ESP8266
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#endif            // ####   ESP32/ESP8266
+//#include <DNSServer.h>// Redirect
+#include "ESPAsyncWebServer.h"//Webserver
 #include "FS.h"   //Include File System Headers
-//#include "SSD1306Spi.h"
-#include <ESP8266HTTPClient.h>
-#include <ArduinoOTA.h>
+#include <ArduinoOTA.h>// Wlan Updates
 #include <Ticker.h>  //Ticker Library for timer Interrupt
 
-//Defines for H bridge
+//#######################   GLOBAL Varriables
+
+// ### User Variables
+#define botName "myBot" // <---- change me
+#define botPassword "" // <---- change me
+#define DEBUG           // Uncomment for non Serial Use
+
+// ### DNS Varriables ###
+//const byte DNS_PORT = 53;
+IPAddress apIP(192,1,1,1);
+//DNSServer dnsServer;
+
+// ### Sonnic Varriables ###
+long duration = 0;
+long distance = 0;
+
+// ### Heartbeat ###
+Ticker checkIPAddress;
+bool deviceIsConnected = false;
+String currentClientIPAddress;
+
+// ### Webserver ###
+AsyncWebServer server(80);
+const char* filename = "/index.html";
+const char* htmlRobotInUse = "/robotInUse.html";
+
+// ### Bot Status ###
+int angleX = 90;
+int angleY = 90;
+bool manualMode = true;
+
+//#######################   PIN Defines
+#ifdef ESP32
+// ### Defines for H bridge ###
+#define enA 23 //D2
+#define enALEDChannel 0
+#define in1 22 //D3   
+#define in2 21 //D4   
+#define in3 19 //D0
+#define in4 18 //S3
+#define enB 5 //D1
+#define enBLEDChannel 1
+#define DEAD_BAND 200
+// ### Defines for Sonic Module ###
+#define TRIGGER 17
+#define ECHO 16
+#elif defined(ESP8266)
+// ### Defines for H bridge ###
 #define enA 4 //D2
 #define in1 0 //D3   
 #define in2 2 //D4   
@@ -14,67 +68,103 @@
 #define in4 D8 //S3
 #define enB 5 //D1
 #define DEAD_BAND 200
+// ### Defines for Sonic Module ###
+#define TRIGGER D5
+#define ECHO D6
+#endif
 
-//Defines for Arduino OTA
-//uncomment line to enable OTA update
-#define OTAUpdate
+//#######################   Defines for Arduino OTA
+#define OTAUpdate //uncomment line to enable OTA update
 
-//Defines for US
-int trigger = D5;
-int echo = D6;
-long duration = 0;
-long distance = 0;
 
-//ChangeMe
-String botName = "myBot";
-String botPassword = "";
 
-Ticker checkIPAddress;
-
-const char* filename = "/index.html";
-const char* htmlRobotInUse = "/robotInUse.html";
-int angleX = 90;
-int angleY = 90;
-bool deviceIsConnected = false;
-bool manualMode = true;
-String currentClientIPAddress;
-
-AsyncWebServer server(80);
-
+//#######################   Functions Motor
 void setMotorSpeed(int leftMotor, int rightMotor) {
   if (leftMotor < - DEAD_BAND) {   //Turn left
+    #ifdef ESP32
+    ledcWrite(enALEDChannel, - leftMotor);
+    #elif defined(ESP8266)
     analogWrite(enA, - leftMotor); // Send PWM signal to L298N Enable pin
+    #endif
     digitalWrite(in1, HIGH);
     digitalWrite(in2, LOW);
-    //Serial.println(leftMotor);
+    #ifdef DEBUG
+    Serial.println("Left motor: " + String((leftMotor*-1)));
+    #endif
   } else if (leftMotor > DEAD_BAND) {
+    #ifdef ESP32
+    ledcWrite(enALEDChannel, leftMotor);
+    #elif defined(ESP8266)
     analogWrite(enA, leftMotor); // Send PWM signal to L298N Enable pin
+    #endif
     digitalWrite(in1, LOW);
     digitalWrite(in2, HIGH);
+    #ifdef DEBUG
+    Serial.println("Left motor: " + String(leftMotor));
+    #endif
   } else {
     digitalWrite(in1, LOW);
     digitalWrite(in2, LOW);
+    #ifdef DEBUG
+    Serial.println("Left motor: STOPPED");
+    #endif
   }
 
   if (rightMotor < - DEAD_BAND) {   //Turn left
+    #ifdef ESP32
+    ledcWrite(enBLEDChannel, - rightMotor);
+    #elif defined(ESP8266)
     analogWrite(enB, - rightMotor); // Send PWM signal to L298N Enable pin
+    #endif
     digitalWrite(in3, HIGH);
     digitalWrite(in4, LOW);
-    //Serial.print(enB);
-    //Serial.println(" Right");
+    #ifdef DEBUG
+    Serial.println("Right motor: " + String((rightMotor*-1)));
+    #endif
   } else if (rightMotor > DEAD_BAND) {
+    #ifdef ESP32
+    ledcWrite(enBLEDChannel, rightMotor);
+    #elif defined(ESP8266)
     analogWrite(enB, rightMotor); // Send PWM signal to L298N Enable pin
+    #endif
     digitalWrite(in3, LOW);
     digitalWrite(in4, HIGH);
-    //Serial.print(enB);
-    //Serial.println(" Left");
+    #ifdef DEBUG
+    Serial.println("Right motor: " + String(rightMotor));
+    #endif
   } else {
-    //Serial.println("STOP");
     digitalWrite(in3, LOW);
     digitalWrite(in4, LOW);
+    #ifdef DEBUG
+    Serial.println("Right motor: STOPED");
+    #endif
   }
 }
 
+
+//#######################   Functions Webpage
+/*
+class CaptiveRequestHandler : public AsyncWebHandler {
+public:
+  CaptiveRequestHandler() {}
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request){
+    //request->addInterestingHeader("ANY");
+    return true;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request) {
+    AsyncResponseStream *response = request->beginResponseStream("text/html");
+    response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
+    response->print("<p>This is out captive portal front page.</p>");
+    response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
+    response->printf("<p>Try opening <a href='http://%s'>this link</a> instead</p>", WiFi.softAPIP().toString().c_str());
+    response->print("</body></html>");
+    request->send(response);
+  }
+};
+*/
 /**
    Function to convert the touch inputs from the Website to a motor speed.
 */
@@ -95,7 +185,9 @@ int angleToMotorSpeed (int angle) {
 */
 void checkForIPAddress() {
   if (currentClientIPAddress != "") {
+    #ifdef DEBUG
     Serial.println("Reset IP Address");
+    #endif
     deviceIsConnected = false;
     currentClientIPAddress = "";
     angleX = 90;
@@ -106,36 +198,39 @@ void checkForIPAddress() {
   }
 }
 
-void moveWheels() {
-  for (int i = 0; i < 4; i++) {
-    setMotorSpeed(1023, 1023);
-    delay(100);
-    setMotorSpeed(0, 0);
-    delay(100);
-  }
-}
-
+//#######################   Functions Sonnic
 /**
    Function to receive the distance measured by the us-sensor in cm
 */
 long getUSDistance() {
-  digitalWrite(trigger, LOW); //Hier nimmt man die Spannung für kurze Zeit vom Trigger-Pin, damit man später beim senden des Trigger-Signals ein rauschfreies Signal hat.
+  digitalWrite(TRIGGER, LOW); //Hier nimmt man die Spannung für kurze Zeit vom Trigger-Pin, damit man später beim senden des Trigger-Signals ein rauschfreies Signal hat.
   delay(5); //duration: 5 Millisekunden
-  digitalWrite(trigger, HIGH); //Jetzt sendet man eine Ultraschallwelle los.
+  digitalWrite(TRIGGER, HIGH); //Jetzt sendet man eine Ultraschallwelle los.
   delay(10); //Dieser „Ton“ erklingt für 10 Millisekunden.
-  digitalWrite(trigger, LOW);//Dann wird der „Ton“ abgeschaltet.
-  duration = pulseIn(echo, HIGH); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
+  digitalWrite(TRIGGER, LOW);//Dann wird der „Ton“ abgeschaltet.
+  duration = pulseIn(ECHO, HIGH); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
   distance = (duration / 2) * 0.03432; //Nun berechnet man die distance in Zentimetern. Man teilt zunächst die Zeit durch zwei (Weil man ja nur eine Strecke berechnen möchte und nicht die Strecke hin- und zurück). Den Wert multipliziert man mit der Schallgeschwindigkeit in der Einheit Zentimeter/Mikrosekunde und erhält dann den Wert in Zentimetern.
   return distance;
 }
 
+//#######################   SETUP
 void setup()
 {
+  #ifdef DEBUG
   Serial.begin (115200); //Start serial communication
-  Serial.println("Setup Begin");
+  Serial.println("Setup Begin\nPindefines");
+  #endif
   //Initialize H bridge
+  #ifdef ESP32
+  ledcAttachPin(enA, enALEDChannel);
+  ledcAttachPin(enB, enBLEDChannel);
+  // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
+  ledcSetup(enALEDChannel, 4000, 8); // 12 kHz PWM, 8-bit resolution
+  ledcSetup(enBLEDChannel, 4000, 8); // 12 kHz PWM, 8-bit resolution
+  #elif defined(ESP8266)
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
+  #endif
   pinMode(in1, OUTPUT);
   pinMode(in2, OUTPUT);
   pinMode(in3, OUTPUT);
@@ -146,23 +241,27 @@ void setup()
   digitalWrite(in3, LOW);
   digitalWrite(in4, LOW);
   //Init US
-  pinMode(trigger, OUTPUT);
-  pinMode(echo, INPUT);
+  pinMode(TRIGGER, OUTPUT);
+  pinMode(ECHO, INPUT);
 
 
 
   //Initialize File System
   if (SPIFFS.begin())
   {
+    #ifdef DEBUG
     Serial.println("SPIFFS Initialize....ok");
+    #endif
   }
   else
   {
+    #ifdef DEBUG
     Serial.println("SPIFFS Initialization...failed");
+    #endif
   }
 
   File f = SPIFFS.open(filename, "r");
-
+  #ifdef DEBUG
   if (!f) {
     Serial.println("file open failed");
   }
@@ -171,17 +270,24 @@ void setup()
     //Write html site to file
     Serial.println("Writing Data to File");
   }
-
+  #endif
   WiFi.setAutoConnect(0);                    //Enables or Disaple WiFi Quick Connect
 
   //Initialize WiFi Settings
-  WiFi.softAP(botName, botPassword); //Create WiFi hotspot
   WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAP(botName, botPassword); //Create WiFi hotspot
+  
+  // Popup DNS
+  //dnsServer.start(DNS_PORT, "*", apIP);
+  //server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
+  
+  #ifdef DEBUG
   Serial.print("Access Point \"");
   Serial.println("\" started");
   Serial.print("IP address:\t");
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
-
+  #endif
   //Arduino OTA
 #ifdef OTAUpdate
   ArduinoOTA.setHostname("BOTOTA");
@@ -194,15 +300,22 @@ void setup()
     }
 
     // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+    #ifdef DEBUG
     Serial.println("Start updating " + type);
+    #endif
   });
   ArduinoOTA.onEnd([]() {
+    #ifdef DEBUG
     Serial.println("\nEnd");
+    #endif
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    #ifdef DEBUG
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    #endif
   });
   ArduinoOTA.onError([](ota_error_t error) {
+    #ifdef DEBUG
     Serial.printf("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) {
       Serial.println("Auth Failed");
@@ -215,6 +328,7 @@ void setup()
     } else if (error == OTA_END_ERROR) {
       Serial.println("End Failed");
     }
+    #endif
   });
   ArduinoOTA.begin();
 #endif
@@ -226,7 +340,9 @@ void setup()
 
   //Function to execute if Button on Homepage was pressed
   server.on("/button/", HTTP_GET, [](AsyncWebServerRequest * request) {
+    #ifdef DEBUG
     Serial.println("Button pressed");
+    #endif
     request -> send(200);
   });
 
@@ -249,10 +365,12 @@ void setup()
           //    Serial.print("Angle y:");
           //    Serial.println(angleY);
         } else {
+          #ifdef DEBUG
           Serial.print("unknown name: ");
           Serial.print(p->name());
           Serial.print(", value to int: ");
           Serial.println(p->value().toInt());
+          #endif
         }
       }
       if (request -> params() == 0) {
@@ -263,18 +381,21 @@ void setup()
       checkIPAddress.attach_ms(500, checkForIPAddress); //Enable Timer again
     } else {
       request->send(SPIFFS, "/robotInUse.html");
+      #ifdef DEBUG
       Serial.print("Declined Connection from: ");
       Serial.print(request->client()->remoteIP().toString());
       Serial.print(", The following device is already connected: ");
       Serial.println(currentClientIPAddress);
+      #endif
     }
   });
   server.begin();
 
   //Attach Timer Interrput to check IP Address
   checkIPAddress.attach_ms(500, checkForIPAddress);
-
+  #ifdef DEBUG
   Serial.println("Setup Finished");
+  #endif
 }
 
 
@@ -308,4 +429,5 @@ void loop()
 #ifdef OTAUpdate
   ArduinoOTA.handle();
 #endif
+//dnsServer.processNextRequest();
 }
