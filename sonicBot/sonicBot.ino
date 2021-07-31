@@ -373,6 +373,10 @@ void setup()
       //deviceIsConnected = true;
       request->send(SPIFFS, "/index.html");
   });
+  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
+      request->send(SPIFFS, "favicon.ico", "image/x-icon");
+  });
+
   // Websoket
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
