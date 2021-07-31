@@ -244,7 +244,6 @@ long getUSDistance() {
 //#######################   SETUP
 void setup()
 {
-  //Serial.begin (115200);
   #ifdef DEBUG
   Serial.begin (115200); //Start serial communication
   Serial.println(doc.capacity());
@@ -255,8 +254,8 @@ void setup()
   ledcAttachPin(enA, enALEDChannel);
   ledcAttachPin(enB, enBLEDChannel);
   // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
-  ledcSetup(enALEDChannel, 4000, 8); // 12 kHz PWM, 8-bit resolution
-  ledcSetup(enBLEDChannel, 4000, 8); // 12 kHz PWM, 8-bit resolution
+  ledcSetup(enALEDChannel, 2000, 10); // 2 kHz PWM, 10-bit resolution
+  ledcSetup(enBLEDChannel, 2000, 10); // 2 kHz PWM, 10-bit resolution
   #elif defined(ESP8266)
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
