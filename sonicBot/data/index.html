@@ -27,14 +27,14 @@
   background-color: #4CAF50;
   border: none;
   color: white;
-  padding: 6% 30%;
+  padding: 2% 2%;
 	border-radius: 15px;
  box-shadow: 0 9px #999;
   text-align: center;
   text-decoration: none;
   display: inline-block;
   font-size: 16px;
-  margin: 4px 2px;
+  margin: 2px 2px;
   cursor: pointer;
 	-webkit-appearance: none;
 }
@@ -47,8 +47,8 @@
 
 .buttonSpace {
 	display: flex;
- align-items: center;
- justify-content: center
+	flex-wrap: wrap;
+	justify-content: space-between;
 }
 
 	td {
@@ -141,11 +141,9 @@
 	<div class="startmove">
 		<h1>TOUCH and MOVE!</h1>
 	</div>
-	<div class="buttonSpace">
-		<input type="button" onclick="buttonPress()" class="button" value="Press me!" id="button1">
+	<div  class="buttonSpace" id="buttonSpace">
 	</div>
 	<pre class="conso" id="moves"></pre>
-
 	<script>
 	var gateway = `ws://${window.location.hostname}/ws`;
 	var websocket;
@@ -158,8 +156,8 @@
 
 	var startmove = document.querySelector('.startmove');
 	var moves = document.getElementById('moves');
-	var button1 = document.getElementById('button1');
 	var connectionindicator = document.getElementById('light');
+	var buttonSpace = document.getElementById('buttonSpace');
 	var startx = 0;
 	var starty = 0;
 	var dist = 0;
@@ -205,8 +203,8 @@
 		websocket.send('{"angleX":'+Math.round(y)+',angleY:'+Math.round(x)+'}');
 	}
 
-	function buttonPress() {
-		websocket.send('{"button":12345}');
+	function buttonPress(id) {
+		websocket.send('{"button":"' + id + '"}');
 	}
 	
 	function initWebSocket() {
@@ -219,6 +217,7 @@
 	}
 	
 	function onOpen(event) {
+		buttonSpace.innerHTML = "";
 		console.log('Connection opened');
 		moves.innerHTML = 'Verbindung hestellt';
 		setColor(connectionindicator, 'green');
@@ -233,6 +232,15 @@
 	
 	function onMessage(event) {
 		// MAche etwas mit Daten vom Bot
+		var content = JSON.parse(event.data);
+		if (content.type == 'btn') {
+			if (content.action == 'create') {
+				buttonSpace.innerHTML = buttonSpace.innerHTML + '<input type="button" onclick="buttonPress(this.id)" class="button" value="' + content.text + '" id="' + content.name + '">';
+			} else if (content.action == 'update'){
+				var tempelement = document.getElementById(content.name);
+				tempelement.value = content.text;
+			}
+		}
 	}
 	function setColor(element, color){
 		element.style.backgroundColor = color;
