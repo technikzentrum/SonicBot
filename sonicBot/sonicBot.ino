@@ -9,6 +9,7 @@
 // ### Sonnic Varriables ###
 long duration = 0;
 long distance = 0;
+long last_tick = 0;
 
 //#######################   Functions Sonnic
 /**
@@ -66,6 +67,18 @@ void loop()
            delay(100)                               //Add additional delay
     */
   }
+  if (last_tick + 500 < millis()) {
+    getUSDistance();
+    if (wsclient != NULL) {
+      long distcnace = getUSDistance();
+      changeCardText("sonnic", "Distance: " + String(distcnace), wsclient);
+      #ifdef DEBUG
+        Serial.println("Distance: " + String(distcnace));
+      #endif
+    }
+    last_tick = millis();
+  }
+  
 #ifdef OTAUpdate
   OTAhandle();
 #endif

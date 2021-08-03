@@ -28,9 +28,9 @@
 #endif
 
 // ### User Variables
-#define BOT_NAME "myBot" // <---- change me
+#define BOT_NAME "myBot2" // <---- change me
 #define BOT_PASSWORD "" // <---- change me
 #define DEBUG           // Uncomment for non Serial Use
 
 //#######################   Defines for Arduino OTA
-//#define OTAUpdate //uncomment line to enable OTA update
+#define OTAUpdate //uncomment line to enable OTA update

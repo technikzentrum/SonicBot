@@ -40,6 +40,7 @@ struct btnSave {
   btnSave callbacks[6];
   int btnCounter = 0;
   AsyncWebSocketClient * wsclient;
+  bool isConnect = false;
 
 	bool initSPIFFS() {
   bool errorIndicator = false;
@@ -73,6 +74,14 @@ struct btnSave {
   return errorIndicator;
 }
 
+void addCard(String name, String text, AsyncWebSocketClient * client){
+  client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"card\", \"action\":\"create\"}");
+}
+
+void changeCardText(String name, String text, AsyncWebSocketClient * client){
+  client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"card\", \"action\":\"update\"}");
+}
+
 void addButton(String name, String text, callbackFunction newFunction, AsyncWebSocketClient * client){
   client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"btn\", \"action\":\"create\"}");
   callbacks[btnCounter].id = name;
@@ -92,6 +101,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       Serial.println("Websocket client connection received");
     #endif
     addButton("btn0", "User Button", [] {Serial.println("User action");}, client);
+    addCard("sonnic", "Distance: ", client);
     addButton("btn1", "Change to sonnic mode", []() {
       manualMode = !manualMode;
       #ifdef DEBUG
@@ -104,6 +114,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       }
       }, client);
   } else if(type == WS_EVT_DISCONNECT){
+    wsclient = NULL;
     angleX = 90;
     angleY = 90;
     int leftMotor = angleToMotorSpeed(angleX);
@@ -133,17 +144,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
               callbacks[i].function();
             }
           }
-          /*if (id.equals("btn1")){
-            manualMode = !manualMode;
-            if (manualMode) {
-              client->text("{\"name\":\"btn1\", \"text\":\"Change to sonnic mode\", \"type\":\"btn\", \"action\":\"update\"}");
-            } else {
-              client->text("{\"name\":\"btn1\", \"text\":\"Change to manuel mode\", \"type\":\"btn\", \"action\":\"update\"}");
-            }
-            #ifdef DEBUG
-              Serial.println("Manuelmode Changed");
-            #endif
-          }*/
         }
         if (doc.containsKey("angleX") && doc.containsKey("angleY")) {
           //TODO: change to function in Motorcontrol
