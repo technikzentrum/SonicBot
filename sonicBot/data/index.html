@@ -162,6 +162,7 @@
 	var starty = 0;
 	var dist = 0;
 	var max = Math.round(Math.min(startmove.offsetWidth, startmove.offsetHeight) * 0.8);
+	var reconnectTry = true;
 
 	startmove.addEventListener('touchstart', function(eve){
 		var  touchobj = eve.changedTouches[0]; // erster Finger
@@ -208,12 +209,14 @@
 	}
 	
 	function initWebSocket() {
-		setColor(connectionindicator, 'blue');
-		console.log('Trying to open a WebSocket connection...');
-		websocket = new WebSocket(gateway);
-		websocket.onopen    = onOpen;
-		websocket.onclose   = onClose;
-		websocket.onmessage = onMessage; // <-- add this line
+		if (reconnectTry === true) {
+			setColor(connectionindicator, 'blue');
+			console.log('Trying to open a WebSocket connection...');
+			websocket = new WebSocket(gateway);
+			websocket.onopen    = onOpen;
+			websocket.onclose   = onClose;
+			websocket.onmessage = onMessage; // <-- add this line
+		}
 	}
 	
 	function onOpen(event) {
@@ -234,6 +237,11 @@
 		// MAche etwas mit Daten vom Bot
 		var content = JSON.parse(event.data);
 		console.log(content);
+		if (content.type == 'disconnect') {
+			reconnectTry = false;
+			websocket.close();
+			setColor(connectionindicator, 'red');
+		}
 		if (content.type == 'btn') {
 			if (content.action == 'create') {
 				buttonSpace.innerHTML = buttonSpace.innerHTML + '<input type="button" onclick="buttonPress(this.id)" class="button" value="' + content.text + '" id="' + content.name + '">';
@@ -244,7 +252,7 @@
 		}
 		if (content.type == 'card') {
 			if (content.action == 'create') {
-				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content.name + '"><p>' + content.text + '</p></div> ';
+				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id=" ' + content.name + ' "><p>' + content.text + '</p></div> ';
 			} else if (content.action == 'update'){
 				var tempelement = document.getElementById(content.name);
 				tempelement.innerHTML = '<p>' + content.text + '</p>';
