@@ -132,6 +132,8 @@
 		border-radius: 50%;
 		display: inline-block;
 	}
+	
+	.w3-card {box-shadow:0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12)}
 </style>
 
 </head>
@@ -151,6 +153,7 @@
 	window.addEventListener('load', onLoad);
 	function onLoad(event) {
 		moves.innerHTML = 'Verbinde';
+		initEventSource();
 		initWebSocket();
 	}
 
@@ -162,6 +165,10 @@
 	var starty = 0;
 	var dist = 0;
 	var max = Math.round(Math.min(startmove.offsetWidth, startmove.offsetHeight) * 0.8);
+	var lasSend = Date.now();
+	var reconnecct = true;
+	var notSend = false;
+	var sendValue = null;
 
 	startmove.addEventListener('touchstart', function(eve){
 		var  touchobj = eve.changedTouches[0]; // erster Finger
@@ -187,6 +194,32 @@
 		moves.innerHTML = 'touchmove horizontal: ' + distx + 'px vertikal: ' + disty + 'px';
 		eve.preventDefault();
 	});
+	
+	setInterval(function() { 
+		sendLast(); 
+	}, 110);
+	
+	function initEventSource() {
+		if (!!window.EventSource) {
+		  var source = new EventSource('/events');
+
+		  source.addEventListener('open', function(e) {
+			console.log("Events Connected");
+		  }, false);
+
+		  source.addEventListener('error', function(e) {
+			if (e.target.readyState != EventSource.OPEN) {
+			  console.log("Events Disconnected");
+			  setColor(connectionindicator, 'red');
+			}
+		  }, false);
+
+		  source.addEventListener('message', function(e) {
+			//console.log("message", e.data);
+			parseEvent(e.data);
+		  }, false);
+		}
+	}
 
 	function cancelEvents(eve){
 		var touchobj = eve.changedTouches[0]; // reference first touch point for this event
@@ -200,7 +233,24 @@
 
 
 	function sendValues(x, y) {
-		websocket.send('{"angleX":'+Math.round(y)+',angleY:'+Math.round(x)+'}');
+		if (lasSend +100 < Date.now()) {
+			notSend = false;
+			websocket.send('{"angleX":'+Math.round(y)+',angleY:'+Math.round(x)+'}');
+			lasSend = Date.now();
+			sendValue = null;
+		}else {
+			notSend = true;
+			sendValue = '{"angleX":'+Math.round(y)+',angleY:'+Math.round(x)+'}';
+		}
+	}
+	
+	function sendLast() {
+		if (notSend && lasSend + 100 < Date.now() && sendValue != null) {
+			notSend = false;
+			websocket.send(sendValue);
+			lasSend = Date.now();
+			sendValue = null;
+		}
 	}
 
 	function buttonPress(id) {
@@ -208,12 +258,14 @@
 	}
 	
 	function initWebSocket() {
-		setColor(connectionindicator, 'blue');
-		console.log('Trying to open a WebSocket connection...');
-		websocket = new WebSocket(gateway);
-		websocket.onopen    = onOpen;
-		websocket.onclose   = onClose;
-		websocket.onmessage = onMessage; // <-- add this line
+		if (reconnecct) {
+			setColor(connectionindicator, 'blue');
+			console.log('Trying to open a WebSocket connection...');
+			websocket = new WebSocket(gateway);
+			websocket.onopen    = onOpen;
+			websocket.onclose   = onClose;
+			websocket.onmessage = onMessage; // <-- add this line
+		}
 	}
 	
 	function onOpen(event) {
@@ -234,6 +286,14 @@
 		// MAche etwas mit Daten vom Bot
 		var content = JSON.parse(event.data);
 		console.log(content);
+		if (content.type == 'disconnect') {
+			reconnecct = false;
+			startmove.innerHTML = '<h2>Verbindung unterbrochen Bot in benutzung</h2>';
+			console.log('Connection closed');
+			setColor(connectionindicator, 'red');
+			websocket.close();
+			buttonSpace.innerHTML = '<form action="/dcAll">    <input type="submit" value="Force disconnect all" /></form>';
+		}
 		if (content.type == 'btn') {
 			if (content.action == 'create') {
 				buttonSpace.innerHTML = buttonSpace.innerHTML + '<input type="button" onclick="buttonPress(this.id)" class="button" value="' + content.text + '" id="' + content.name + '">';
@@ -246,11 +306,42 @@
 			if (content.action == 'create') {
 				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content.name + '"><p>' + content.text + '</p></div> ';
 			} else if (content.action == 'update'){
-				var tempelement = document.getElementById(content.name);
+				var tempelement = document.getElementById(content[name]);
 				tempelement.innerHTML = '<p>' + content.text + '</p>';
 			}
 		}
 	}
+	
+	function parseEvent(event) {
+		// MAche etwas mit Daten vom Bot
+		var content = JSON.parse(event);
+		console.log(content);
+		for (var i = 0; i < content["data"].length; i++){
+			if (content["data"][i].type == 'disconnect') {
+				reconnecct = false;
+				startmove.innerHTML = '<h2>Verbindung unterbrochen Bot in benutzung</h2>';
+				console.log('Connection closed');
+				setColor(connectionindicator, 'red');
+				websocket.close();
+				buttonSpace.innerHTML = '<form action="/dcAll">    <input type="submit" value="Force disconnect all" /></form>';
+			}else if (content["data"][i].type == 'btn') {
+				if (content["data"][i].action == 'create') {
+					buttonSpace.innerHTML = buttonSpace.innerHTML + '<input type="button" onclick="buttonPress(this.id)" class="button" value="' + content["data"][i].text + '" id="' + content["data"][i].name + '">';
+				} else if (content["data"][i].action == 'update'){
+					var tempelement = document.getElementById(content["data"][i].name);
+					tempelement.value = content["data"][i].text;
+				}
+			}else if (content["data"][i].type == 'card') {
+				if (content["data"][i].action == 'create') {
+					buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content["data"][i].name + '"><p>' + content["data"][i].text + '</p></div> ';
+				} else if (content["data"][i].action == 'update'){
+					var tempelement = document.getElementById(content["data"][i].name);
+					tempelement.innerHTML = '<p>' + content["data"][i].text + '</p>';
+				}
+			}
+		}
+	}
+	
 	function setColor(element, color){
 		element.style.backgroundColor = color;
 	}

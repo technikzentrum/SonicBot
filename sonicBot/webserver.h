@@ -13,7 +13,10 @@
 	#include <ArduinoJson.h>
 	#include "ESPAsyncWebServer.h"//Webserver
 	#include "FS.h"   //Include File System Headers
-
+// Globals
+#ifdef ESP32// no Racecondition
+static SemaphoreHandle_t mutex;
+#endif
   extern bool manualMode;
 	extern int angleX;
 	extern int angleY;
@@ -36,11 +39,13 @@ struct btnSave {
 	AsyncWebSocket ws("/ws");
 	const char* filename = "/index.html";
 	const char* htmlRobotInUse = "/robotInUse.html";
-	DynamicJsonDocument doc(2048);
+	DynamicJsonDocument doc(4096);
+  DynamicJsonDocument docSend(4096);
+  JsonArray dataSend;
   btnSave callbacks[6];
   int btnCounter = 0;
   AsyncWebSocketClient * wsclient;
-  bool isConnect = false;
+  AsyncEventSource events("/events");
 
 	bool initSPIFFS() {
   bool errorIndicator = false;
@@ -78,8 +83,32 @@ void addCard(String name, String text, AsyncWebSocketClient * client){
   client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"card\", \"action\":\"create\"}");
 }
 
-void changeCardText(String name, String text, AsyncWebSocketClient * client){
-  client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"card\", \"action\":\"update\"}");
+void webElement(String name, String text, String typee, String action) {
+  #ifdef ESP32// no Racecondition
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  #endif
+  int fund = 0;
+  for (JsonVariant value : dataSend) {
+    String ss = value;
+    if (ss.indexOf((String("\"name\":\"") + name)) != -1) {
+      if ( ss.indexOf("\"action\":\"" + action + "\"") != -1){
+        value.set(serialized("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"" + typee + "\", \"action\":\"" + action + "\"}"));
+        fund = 1;
+        //Serial.println("ersetze");
+        break;
+      }
+    }
+  }
+  if (!fund) {
+    dataSend.add(serialized("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"card\", \"action\":\"update\"}"));
+  }
+  #ifdef ESP32// no Racecondition
+  xSemaphoreGive(mutex);
+  #endif
+}
+
+void changeCardText(String name, String text){
+  webElement(name, text, "card", "update");
 }
 
 void addButton(String name, String text, callbackFunction newFunction, AsyncWebSocketClient * client){
@@ -89,37 +118,71 @@ void addButton(String name, String text, callbackFunction newFunction, AsyncWebS
   btnCounter++;
 }
 
-void changeButtonText(String name, String text, AsyncWebSocketClient * client){
-  client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"btn\", \"action\":\"update\"}");
+void changeButtonText(String name, String text){
+  webElement(name, text, "btn", "update");
+}
+
+void updateWebPage() {
+  #ifdef ESP32// no Racecondition
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  #endif
+    char output[512];
+    serializeJson(docSend, output);
+    #ifdef DEBUG
+      Serial.println(output);
+    #endif
+    docSend.clear();
+    dataSend = docSend.createNestedArray("data");
+  #ifdef ESP32// no Racecondition
+  xSemaphoreGive(mutex);
+  #endif
+  events.send(output);
 }
 
 // Websoket
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if(type == WS_EVT_CONNECT){
-    wsclient = client;
+    if (ws.getClients().length()>1) {
+      client->text("{\"type\":\"disconnect\"}");
+      return;
+    }
     #ifdef DEBUG
       Serial.println("Websocket client connection received");
     #endif
-    addButton("btn0", "User Button", [] {Serial.println("User action");}, client);
+    addButton("btn0", "User Button", [] {
+      #ifdef DEBUG
+        Serial.println("User action");
+      #endif
+      }, client);
+    addCard("left", "MotorL: 0%", client);
     addCard("sonnic", "Distance: ", client);
+    addCard("right", "MotorR: 0%", client);
+    wsclient = client;
     addButton("btn1", "Change to sonnic mode", []() {
       manualMode = !manualMode;
       #ifdef DEBUG
          Serial.println("Manuelmode Changed");
       #endif
       if (manualMode) {
-        changeButtonText("btn1", "Change to sonnic mode", wsclient);
+        changeButtonText("btn1", "Change to sonnic mode");
       } else {
-        changeButtonText("btn1", "Change to manuel mode", wsclient);
+        changeButtonText("btn1", "Change to manuel mode");
       }
       }, client);
   } else if(type == WS_EVT_DISCONNECT){
+    if (ws.getClients().length()==0) {
+      btnCounter = 0;
+    }
+    btnCounter = 0;
     wsclient = NULL;
     angleX = 90;
     angleY = 90;
     int leftMotor = angleToMotorSpeed(angleX);
     int rightMotor = leftMotor;
+    changeCardText("left", "MotorL: 0%");
+    changeCardText("right", "MotorR: 0%");
     setMotorSpeed(leftMotor, rightMotor);
+    
     #ifdef DEBUG
       Serial.println("Client disconnected");
     #endif
@@ -135,6 +198,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
           Serial.print(F("deserializeJson() failed: "));
           Serial.println(error.f_str());
         #endif
+        doc.clear();
         return;
       } else {
         if (doc.containsKey("button")) {
@@ -157,14 +221,23 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
           } else {
             rightMotor = rightMotor - steer * rightMotor;
           }
+          
+          
+          changeCardText("left", "MotorL: " + String(map(leftMotor, 0, 1024, 0, 100) ) + "%");
+          changeCardText("right", "MotorR: " + String(map(rightMotor, 0, 1024, 0, 100)) + "%");
           setMotorSpeed(leftMotor, rightMotor);
         }
       }
+      doc.clear();
     }
   }
 }
 
 bool initWebserver(){
+  dataSend = docSend.createNestedArray("data");
+  #ifdef ESP32// no Racecondition
+  mutex = xSemaphoreCreateMutex();
+  #endif
   bool initSucsess = true;
   #ifdef DEBUG
   Serial.println("SetAutoConnect");
@@ -194,15 +267,33 @@ bool initWebserver(){
   Serial.print("IP address:\t");
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
   #endif
-  
-  //Function to execute if user makes touch controls on mobile screen
+
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  /*//Function to execute if user makes touch controls on mobile screen
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(SPIFFS, "/index.html");
   });
   server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(SPIFFS, "favicon.ico", "image/x-icon");
+  });*/
+  server.on("/dcAll", HTTP_GET, [](AsyncWebServerRequest * request) {
+      ws.textAll("{\"type\":\"disconnect\"}");
+      ws.closeAll();
+      if (ws.getClients().length()==0){
+        request->redirect("/index.html");
+      }else {
+        request->redirect("/dcAll");
+      }
   });
-
+  // Events
+  events.onConnect([](AsyncEventSourceClient *client){
+    if(client->lastId()){
+      #ifdef DEBUG
+      Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
+      #endif
+    }
+  });
+  server.addHandler(&events);
   // Websoket
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);

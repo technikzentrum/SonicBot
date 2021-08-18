@@ -13,7 +13,7 @@
 // ### Defines for Sonic Module ###
 #define TRIGGER 17
 #define ECHO 16
-#elif defined(ESP8266)
+#else
 // ### Defines for H bridge ###
 #define enA 4 //D2
 #define in1 0 //D3   
@@ -28,9 +28,9 @@
 #endif
 
 // ### User Variables
-#define BOT_NAME "myBot2" // <---- change me
+#define BOT_NAME "TZL-Bot" // <---- change me
 #define BOT_PASSWORD "" // <---- change me
-#define DEBUG           // Uncomment for non Serial Use
+//#define DEBUG           // Uncomment for non Serial Use
 
 //#######################   Defines for Arduino OTA
-#define OTAUpdate //uncomment line to enable OTA update
+//#define OTAUpdate //uncomment line to enable OTA update

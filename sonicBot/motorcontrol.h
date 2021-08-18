@@ -12,9 +12,10 @@ void initMotorPins() {
   ledcAttachPin(enA, enALEDChannel);
   ledcAttachPin(enB, enBLEDChannel);
   // ledcSetup(uint8_t channel, uint32_t freq, uint8_t resolution_bits);
-  ledcSetup(enALEDChannel, 2000, 10); // 2 kHz PWM, 10-bit resolution
-  ledcSetup(enBLEDChannel, 2000, 10); // 2 kHz PWM, 10-bit resolution
-  #elif defined(ESP8266)
+  ledcSetup(enALEDChannel, 20000, 10); // 2 kHz PWM, 10-bit resolution
+  ledcSetup(enBLEDChannel, 20000, 10); // 2 kHz PWM, 10-bit resolution
+  #else
+  analogWriteRange(1023);
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
   #endif
@@ -48,7 +49,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   if (leftMotor < - DEAD_BAND) {   //Turn left
     #ifdef ESP32
     ledcWrite(enALEDChannel, - leftMotor);
-    #elif defined(ESP8266)
+    #else
     analogWrite(enA, - leftMotor); // Send PWM signal to L298N Enable pin
     #endif
     digitalWrite(in1, HIGH);
@@ -59,7 +60,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   } else if (leftMotor > DEAD_BAND) {
     #ifdef ESP32
     ledcWrite(enALEDChannel, leftMotor);
-    #elif defined(ESP8266)
+    #else
     analogWrite(enA, leftMotor); // Send PWM signal to L298N Enable pin
     #endif
     digitalWrite(in1, LOW);
@@ -78,7 +79,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   if (rightMotor < - DEAD_BAND) {   //Turn left
     #ifdef ESP32
     ledcWrite(enBLEDChannel, - rightMotor);
-    #elif defined(ESP8266)
+    #else
     analogWrite(enB, - rightMotor); // Send PWM signal to L298N Enable pin
     #endif
     digitalWrite(in3, HIGH);
@@ -89,7 +90,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   } else if (rightMotor > DEAD_BAND) {
     #ifdef ESP32
     ledcWrite(enBLEDChannel, rightMotor);
-    #elif defined(ESP8266)
+    #else
     analogWrite(enB, rightMotor); // Send PWM signal to L298N Enable pin
     #endif
     digitalWrite(in3, LOW);
