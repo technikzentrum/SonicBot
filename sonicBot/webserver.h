@@ -100,7 +100,7 @@ void webElement(String name, String text, String typee, String action) {
     }
   }
   if (!fund) {
-    dataSend.add(serialized("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"card\", \"action\":\"update\"}"));
+    dataSend.add(serialized("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"" + typee + "\", \"action\":\"" + action + "\"}"));
   }
   #ifdef ESP32// no Racecondition
   xSemaphoreGive(mutex);
@@ -216,6 +216,18 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
           int leftMotor = angleToMotorSpeed(angleX);
           int rightMotor = leftMotor;
           double steer = angleToMotorSpeed(angleY) / 1023.0;
+          #ifdef DEBUG
+            Serial.print("ax: ");
+            Serial.println(angleX);
+            Serial.print("aY: ");
+            Serial.println(angleY);
+            Serial.print("l: ");
+            Serial.println(leftMotor);
+            Serial.print("r: ");
+            Serial.println(rightMotor);
+            Serial.print("Steer: ");
+            Serial.println(steer);
+          #endif
           if (steer < 0) {
             leftMotor = leftMotor + steer * leftMotor;
           } else {
@@ -231,6 +243,19 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       doc.clear();
     }
   }
+}
+
+String processor(const String& var)
+{
+  if(var == "BOT_NAME") {
+    return BOT_NAME;
+  } else if (var == "DEAD_BAND") {
+    return String(DEAD_BAND);
+  } else if (var == "BOT_PASSWORD") {
+    return String(BOT_PASSWORD);
+  }
+  Serial.println(var);
+  return String();
 }
 
 bool initWebserver(){
@@ -268,7 +293,7 @@ bool initWebserver(){
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
   #endif
 
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  server.serveStatic("/", SPIFFS, "/").setTemplateProcessor(processor).setDefaultFile("index.html");
   /*//Function to execute if user makes touch controls on mobile screen
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(SPIFFS, "/index.html");

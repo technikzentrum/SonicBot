@@ -105,8 +105,8 @@
 
 	#moves {
 		position:absolute;
-		top: 2px;
-		left: 10px;
+		top:3px;
+		left: 130px;
 	}
 
 	body, .startmove, html {
@@ -122,7 +122,7 @@
 	}
 	
 	.dot {
-		z-index: 1;
+		z-index: 5;
 		top: 10px;
 		right: 10px;
 		position: absolute;
@@ -133,6 +133,14 @@
 		display: inline-block;
 	}
 	
+	#menue {
+		z-index: 1;
+		top: 10px;
+		left: 10px;
+		position: absolute;
+		display: inline-block;
+	}
+	
 	.w3-card {box-shadow:0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12)}
 </style>
 
@@ -140,6 +148,11 @@
 
 <body class="cat-js-web">
 	<span id='light' class="dot"></span>
+	<div id='menue'>
+		<form action="/settings.html">
+			<input type="submit" value="Einstellungen" />
+		</form>
+	</div>
 	<div class="startmove">
 		<h1>TOUCH and MOVE!</h1>
 	</div>
@@ -164,15 +177,12 @@
 	var startx = 0;
 	var starty = 0;
 	var dist = 0;
-	var max = Math.round(Math.min(startmove.offsetWidth, startmove.offsetHeight) * 0.8);
-<<<<<<< HEAD
+	var maxX = Math.round(startmove.offsetWidth * 0.8);
+	var maxY = Math.round(startmove.offsetHeight * 0.8);
 	var lasSend = Date.now();
 	var reconnecct = true;
 	var notSend = false;
 	var sendValue = null;
-=======
-	var reconnectTry = true;
->>>>>>> b91447b0aa97dcb90ee4668cc85646e6e6ff8214
 
 	startmove.addEventListener('touchstart', function(eve){
 		var  touchobj = eve.changedTouches[0]; // erster Finger
@@ -183,17 +193,21 @@
 	});
 
 	startmove.addEventListener('touchmove', function(eve){
+		// hole das Event
 		var  touchobj = eve.changedTouches[0]; // erster Finger
+		// Berechne veränderrung zu startposition
 		var  distx = parseInt(touchobj.clientX) - startx;
 		var  disty = parseInt(touchobj.clientY) - starty;
-		if (Math.abs(distx) > max) {
-			distx = Math.sign(distx) * max;
+		// Wenn die maximale strecke überstiegen wird setze auf max aber behalte das vorzeichen
+		if (Math.abs(distx) > maxX) {
+			distx = Math.sign(distx) * maxX;
 		}
-		if (Math.abs(disty) > max) {
-		  disty = Math.sign(disty) * max;
+		if (Math.abs(disty) > maxY) {
+		  disty = Math.sign(disty) * maxY;
 		}
-		distx = Math.round(distx / max * 90.0) + 90;
-		disty = Math.round(disty / max * 90.0) + 90;
+		// Runde auf ganze Zahlen % der bewegung(-1:+1) * maximalwert = Winkel + 90 um auf einen wert zwischen 0 und 180 zu kommen, 
+		distx = Math.round(distx / maxX * 90.0) + 90;
+		disty = Math.round(disty / maxY * 90.0) + 90;
 		sendValues(distx, disty);
 		moves.innerHTML = 'touchmove horizontal: ' + distx + 'px vertikal: ' + disty + 'px';
 		eve.preventDefault();
@@ -308,7 +322,7 @@
 		}
 		if (content.type == 'card') {
 			if (content.action == 'create') {
-				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id=" ' + content.name + ' "><p>' + content.text + '</p></div> ';
+				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content.name + '"><p>' + content.text + '</p></div> ';
 			} else if (content.action == 'update'){
 				var tempelement = document.getElementById(content[name]);
 				tempelement.innerHTML = '<p>' + content.text + '</p>';
