@@ -154,9 +154,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         Serial.println("User action");
       #endif
       }, client);
-    addCard("left", "MotorL: 0%", client);
+    addCard("left", "MotorL:0 % ", client);
     addCard("sonnic", "Distance: ", client);
-    addCard("right", "MotorR: 0%", client);
+    addCard("right", "MotorR:0 % ", client);
     wsclient = client;
     addButton("btn1", "Change to sonnic mode", []() {
       manualMode = !manualMode;
@@ -179,8 +179,8 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     angleY = 90;
     int leftMotor = angleToMotorSpeed(angleX);
     int rightMotor = leftMotor;
-    changeCardText("left", "MotorL: 0%");
-    changeCardText("right", "MotorR: 0%");
+    changeCardText("left", "MotorL: 0 % ");
+    changeCardText("right", "MotorR: 0 % ");
     setMotorSpeed(leftMotor, rightMotor);
     
     #ifdef DEBUG
@@ -235,8 +235,8 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
           }
           
           
-          changeCardText("left", "MotorL: " + String(map(leftMotor, 0, 1024, 0, 100) ) + "%");
-          changeCardText("right", "MotorR: " + String(map(rightMotor, 0, 1024, 0, 100)) + "%");
+          changeCardText("left", "MotorL: " + String(map(leftMotor, 0, 1024, 0, 100) ) + " % ");
+          changeCardText("right", "MotorR: " + String(map(rightMotor, 0, 1024, 0, 100)) + " % ");
           setMotorSpeed(leftMotor, rightMotor);
         }
       }
@@ -293,7 +293,8 @@ bool initWebserver(){
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
   #endif
 
-  server.serveStatic("/", SPIFFS, "/").setTemplateProcessor(processor).setDefaultFile("index.html");
+//.setTemplateProcessor(processor)
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
   /*//Function to execute if user makes touch controls on mobile screen
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(SPIFFS, "/index.html");
