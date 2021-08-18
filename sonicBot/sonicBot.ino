@@ -68,7 +68,7 @@ void loop()
            delay(100)                               //Add additional delay
     */
   }
-  /*if (last_tick_distance + 500 < millis()) {
+  if (last_tick_distance + 500 < millis()) {
     //getUSDistance();
       long distcnace = getUSDistance();
       changeCardText("sonnic", "Distance: " + String(distcnace));
@@ -76,7 +76,7 @@ void loop()
         Serial.println("Distance: " + String(distcnace));
       #endif
     last_tick_distance = millis();
-  }*/
+  }
   if (last_tick + 100 < millis()) {
     last_tick = millis();
     updateWebPage();

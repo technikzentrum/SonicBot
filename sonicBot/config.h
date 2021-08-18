@@ -30,7 +30,7 @@
 // ### User Variables
 #define BOT_NAME "TZL-Bot" // <---- change me
 #define BOT_PASSWORD "" // <---- change me
-#define DEBUG           // Uncomment for non Serial Use
+//#define DEBUG           // Uncomment for non Serial Use
 
 //#######################   Defines for Arduino OTA
 //#define OTAUpdate //uncomment line to enable OTA update
