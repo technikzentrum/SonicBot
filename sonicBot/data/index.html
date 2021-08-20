@@ -27,7 +27,7 @@
   background-color: #4CAF50;
   border: none;
   color: white;
-  padding: 2% 2%;
+  padding: 2vw 2vw;
 	border-radius: 15px;
  box-shadow: 0 9px #999;
   text-align: center;
@@ -91,8 +91,8 @@
 		top:0px;
 		z-index: -1;
 		background-color: #353E4B;
-		width: 100%;
-		height: 100%;
+		width: 100vw;
+		height: 100vh;
 		margin:1em auto;
 		border: 1px solid gainsboro;
 		font-size:1.6em;
@@ -111,14 +111,14 @@
 
 	body, .startmove, html {
 		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-	  width: 100%;
-	  height: 100%;
+	  width: 100vw;
+	  height: 100vh;
 	  margin: 0px;
 	  overflow: hidden;
 	}
 
 	.startmove {
-		height: 80%;
+		height: 80vh;
 	}
 	
 	.dot {
@@ -129,7 +129,7 @@
 		height: 25px;
 		width: 25px;
 		background-color: blue;
-		border-radius: 50%;
+		border-radius: 12.5px;
 		display: inline-block;
 	}
 	
@@ -205,7 +205,7 @@
 		if (Math.abs(disty) > maxY) {
 		  disty = Math.sign(disty) * maxY;
 		}
-		// Runde auf ganze Zahlen % der bewegung(-1:+1) * maximalwert = Winkel + 90 um auf einen wert zwischen 0 und 180 zu kommen, 
+		// Runde auf ganze Zahlen der bewegung(-1:+1) * maximalwert = Winkel + 90 um auf einen wert zwischen 0 und 180 zu kommen, 
 		distx = Math.round(distx / maxX * 90.0) + 90;
 		disty = Math.round(disty / maxY * 90.0) + 90;
 		sendValues(distx, disty);

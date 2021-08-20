@@ -136,7 +136,12 @@ void updateWebPage() {
   #ifdef ESP32// no Racecondition
   xSemaphoreGive(mutex);
   #endif
-  events.send(output);
+  #ifdef DEBUG
+      Serial.println(strlen(output));
+  #endif
+  if (strlen(output)>12) {
+    events.send(output);
+  }
 }
 
 // Websoket
@@ -294,7 +299,7 @@ bool initWebserver(){
   #endif
 
 //.setTemplateProcessor(processor)
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  server.serveStatic("/", SPIFFS, "/").setTemplateProcessor(processor).setDefaultFile("index.html");
   /*//Function to execute if user makes touch controls on mobile screen
   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
       request->send(SPIFFS, "/index.html");

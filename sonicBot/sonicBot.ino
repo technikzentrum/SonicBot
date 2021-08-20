@@ -22,7 +22,7 @@ long getUSDistance() {
   digitalWrite(TRIGGER, HIGH); //Jetzt sendet man eine Ultraschallwelle los.
   delay(10); //Dieser „Ton“ erklingt für 10 Millisekunden.
   digitalWrite(TRIGGER, LOW);//Dann wird der „Ton“ abgeschaltet.
-  duration = pulseIn(ECHO, HIGH); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
+  duration = pulseIn(ECHO, HIGH, 300000); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
   distance = (duration / 2) * 0.03432; //Nun berechnet man die distance in Zentimetern. Man teilt zunächst die Zeit durch zwei (Weil man ja nur eine Strecke berechnen möchte und nicht die Strecke hin- und zurück). Den Wert multipliziert man mit der Schallgeschwindigkeit in der Einheit Zentimeter/Mikrosekunde und erhält dann den Wert in Zentimetern.
   return distance;
 }
@@ -70,7 +70,7 @@ void loop()
   }
   if (last_tick_distance + 500 < millis()) {
     //getUSDistance();
-      long distcnace = getUSDistance();
+      long distcnace = getUSDistance();// TODO: Use interruptand none Blocking mode
       changeCardText("sonnic", "Distance: " + String(distcnace));
       #ifdef DEBUG
         Serial.println("Distance: " + String(distcnace));
