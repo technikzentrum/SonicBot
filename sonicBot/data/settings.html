@@ -51,10 +51,10 @@
 <h1>Bot Menue</h1>
 
 <p>Bot Name:</p>
-<input type="text" value="%BOT_NAME%">
+<input type="text" value="%BOT_NAME%" id="name">
 
 <p>Bot Passwort:</p>
-<input type="text" value="%BOT_PASSWORD%">
+<input type="text" value="%BOT_PASSWORD%" id="pw">
 
 <p>Dead Band:</p>
 <div class="slidecontainer">
@@ -65,13 +65,21 @@ TODO: Sumbit and Save in EEPROM
 <input type="button" onclick="buttonPress()" class="button" value="Ändern" id="senden">
 
 <script>
-var absenden = document.getElementById("senden");
+var ssid = document.getElementById("name");
+var pw = document.getElementById("pw");
 var slider = document.getElementById("deadband");
 var output = document.getElementById("demo");
 output.innerHTML = slider.value;
 
 slider.oninput = function() {
   output.innerHTML = this.value;
+}
+
+function buttonPress() {
+	var xhttp = new XMLHttpRequest();
+		console.log("update Settings");
+		xhttp.open('GET', 'settings/?name=' + ssid.value + '&pw=' + pw.value + '&deadBand=' + slider.value);
+		xhttp.send();
 }
 </script>
 

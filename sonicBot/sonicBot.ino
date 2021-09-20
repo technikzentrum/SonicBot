@@ -41,6 +41,8 @@ void setup()
   pinMode(TRIGGER, OUTPUT);
   pinMode(ECHO, INPUT);
 
+  initEEPROM();
+  
   // WLAN & Webserver
   initSPIFFS();
   initWebserver();

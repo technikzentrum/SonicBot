@@ -326,29 +326,25 @@ bool initWebserver(){
       for (int i = 0; i < paramsNr; i++) {
         AsyncWebParameter* p = request->getParam(i);
         if (p->name() == "name") {
-          angleX = p->value().toInt();
-          //   Serial.print("Angle x:");
-          //   Serial.println(angleX);
-        } else if (p->name() == "angleY") {
-          angleY = p->value().toInt();
-          //    Serial.print("Angle y:");
-          //    Serial.println(angleY);
+          p->value().toCharArray(configSet.ssid, 25);
+        } else if (p->name() == "pw") {
+          p->value().toCharArray(configSet.pw, 25);
+        } else if (p->name() == "deadBand") {
+          configSet.deadBand = p->value().toInt();
         } else {
-          Serial.print("unknown name: ");
-          Serial.print(p->name());
-          Serial.print(", value to int: ");
-          Serial.println(p->value().toInt());
+          #ifdef DEBUG
+            Serial.print("unknown name: ");
+            Serial.print(p->name());
+            Serial.print(", value to int: ");
+            Serial.println(p->value().toInt());
+          #endif
         }
       }
       if (request -> params() == 0) {
         request->send(SPIFFS, "/index.html");
       } else {
+        saveInEEPROM();
         request -> send(200);
-      }
-      if (ws.getClients().length()==0){
-        request->redirect("/index.html");
-      }else {
-        request->redirect("/dcAll");
       }
   });
   // Events
