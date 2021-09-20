@@ -22,6 +22,7 @@ static SemaphoreHandle_t mutex;
 	extern int angleY;
 	extern void setMotorSpeed(int leftMotor, int rightMotor);
 	extern int angleToMotorSpeed (int angle);
+ extern ConfigLoad configSet;
 
 extern "C" {
 typedef void (*callbackFunction)(void);
@@ -253,11 +254,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 String processor(const String& var)
 {
   if(var == "BOT_NAME") {
-    return BOT_NAME;
+    return configSet.ssid;
   } else if (var == "DEAD_BAND") {
-    return String(DEAD_BAND);
+    return String(configSet.deadBand);
   } else if (var == "BOT_PASSWORD") {
-    return String(BOT_PASSWORD);
+    return String(configSet.pw);
   }
   Serial.println(var);
   return String();
@@ -283,7 +284,11 @@ bool initWebserver(){
   #ifdef DEBUG
   Serial.println("DefinesFehlen");
   #endif
-  WiFi.softAP(BOT_NAME, BOT_PASSWORD); //Create WiFi hotspot
+  #ifdef ESP32
+    WiFi.softAP(configSet.ssid, configSet.pw); //Create WiFi hotspot
+  #else
+    WiFi.softAP(configSet.ssid, configSet.pw); //Create WiFi hotspot
+  #endif
   #ifdef DEBUG
   Serial.println("Doch nicht");
   #endif
@@ -310,6 +315,36 @@ bool initWebserver(){
   server.on("/dcAll", HTTP_GET, [](AsyncWebServerRequest * request) {
       ws.textAll("{\"type\":\"disconnect\"}");
       ws.closeAll();
+      if (ws.getClients().length()==0){
+        request->redirect("/index.html");
+      }else {
+        request->redirect("/dcAll");
+      }
+  });
+  server.on("/settings", HTTP_GET, [](AsyncWebServerRequest * request) {
+      int paramsNr = request->params();
+      for (int i = 0; i < paramsNr; i++) {
+        AsyncWebParameter* p = request->getParam(i);
+        if (p->name() == "name") {
+          angleX = p->value().toInt();
+          //   Serial.print("Angle x:");
+          //   Serial.println(angleX);
+        } else if (p->name() == "angleY") {
+          angleY = p->value().toInt();
+          //    Serial.print("Angle y:");
+          //    Serial.println(angleY);
+        } else {
+          Serial.print("unknown name: ");
+          Serial.print(p->name());
+          Serial.print(", value to int: ");
+          Serial.println(p->value().toInt());
+        }
+      }
+      if (request -> params() == 0) {
+        request->send(SPIFFS, "/index.html");
+      } else {
+        request -> send(200);
+      }
       if (ws.getClients().length()==0){
         request->redirect("/index.html");
       }else {

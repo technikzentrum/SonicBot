@@ -183,6 +183,7 @@
 	var reconnecct = true;
 	var notSend = false;
 	var sendValue = null;
+	var intervallSend = 100; //ms
 
 	startmove.addEventListener('touchstart', function(eve){
 		var  touchobj = eve.changedTouches[0]; // erster Finger
@@ -235,6 +236,7 @@
 		  source.addEventListener('message', function(e) {
 			//console.log("message", e.data);
 			parseEvent(e.data);
+			setColor(connectionindicator, 'green');
 		  }, false);
 		}
 	}
@@ -251,7 +253,7 @@
 
 
 	function sendValues(x, y) {
-		if (lasSend +100 < Date.now()) {
+		if (lasSend + intervallSend < Date.now()) {
 			notSend = false;
 			websocket.send('{"angleX":'+Math.round(y)+',angleY:'+Math.round(x)+'}');
 			lasSend = Date.now();
@@ -263,7 +265,7 @@
 	}
 	
 	function sendLast() {
-		if (notSend && lasSend + 100 < Date.now() && sendValue != null) {
+		if (notSend && lasSend + intervallSend < Date.now() && sendValue != null) {
 			notSend = false;
 			websocket.send(sendValue);
 			lasSend = Date.now();
@@ -272,7 +274,9 @@
 	}
 
 	function buttonPress(id) {
-		websocket.send('{"button":"' + id + '"}');
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
+    	xhttp.send();
 	}
 	
 	function initWebSocket() {

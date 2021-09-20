@@ -9,12 +9,12 @@
 
 <style>
 .slidecontainer {
-  width: 100%;
+  width: 100vw;
 }
 
 .slider {
   -webkit-appearance: none;
-  width: 100%;
+  width: 100vw;
   height: 25px;
   background: #d3d3d3;
   outline: none;
@@ -47,6 +47,7 @@
 </head>
 
 <body class="cat-js-web">
+<form action="/">    <input type="submit" value="<-" /></form>
 <h1>Bot Menue</h1>
 
 <p>Bot Name:</p>
@@ -60,8 +61,11 @@
   <input type="range" min="0" max="1024" value="%DEAD_BAND%" class="slider" id="deadband">
   <p>Value: <span id="demo"></span></p>
 </div>
+TODO: Sumbit and Save in EEPROM
+<input type="button" onclick="buttonPress()" class="button" value="Ändern" id="senden">
 
 <script>
+var absenden = document.getElementById("senden");
 var slider = document.getElementById("deadband");
 var output = document.getElementById("demo");
 output.innerHTML = slider.value;

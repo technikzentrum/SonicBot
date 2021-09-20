@@ -77,7 +77,7 @@ void loop()
       #endif
     last_tick_distance = millis();
   }
-  if (last_tick + 100 < millis()) {
+  if (last_tick + 200 < millis()) {
     last_tick = millis();
     updateWebPage();
   }

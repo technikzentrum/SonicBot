@@ -46,7 +46,7 @@ int angleToMotorSpeed (int angle) {
 }
 
 void setMotorSpeed(int leftMotor, int rightMotor) {
-  if (leftMotor < - DEAD_BAND) {   //Turn left
+  if (leftMotor < - configSet.deadBand) {   //Turn left
     #ifdef ESP32
     ledcWrite(enALEDChannel, - leftMotor);
     #else
@@ -57,7 +57,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #ifdef DEBUG
     Serial.println("Left motor: " + String((leftMotor*-1)));
     #endif
-  } else if (leftMotor > DEAD_BAND) {
+  } else if (leftMotor > configSet.deadBand) {
     #ifdef ESP32
     ledcWrite(enALEDChannel, leftMotor);
     #else
@@ -76,7 +76,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #endif
   }
 
-  if (rightMotor < - DEAD_BAND) {   //Turn left
+  if (rightMotor < - configSet.deadBand) {   //Turn left
     #ifdef ESP32
     ledcWrite(enBLEDChannel, - rightMotor);
     #else
@@ -87,7 +87,7 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #ifdef DEBUG
     Serial.println("Right motor: " + String((rightMotor*-1)));
     #endif
-  } else if (rightMotor > DEAD_BAND) {
+  } else if (rightMotor > configSet.deadBand) {
     #ifdef ESP32
     ledcWrite(enBLEDChannel, rightMotor);
     #else
