@@ -51,17 +51,16 @@
 <h1>Bot Menue</h1>
 
 <p>Bot Name:</p>
-<input type="text" value="%BOT_NAME%" id="name">
+<input type="text" value="%BOT_NAME%" id="name" maxlength="32">
 
-<p>Bot Passwort:</p>
-<input type="text" value="%BOT_PASSWORD%" id="pw">
+<p>Bot Passwort: (min. 8 Zeichen)</p>
+<input type="text" value="%BOT_PASSWORD%" id="pw" maxlength="64">
 
 <p>Dead Band:</p>
 <div class="slidecontainer">
   <input type="range" min="0" max="1024" value="%DEAD_BAND%" class="slider" id="deadband">
   <p>Value: <span id="demo"></span></p>
 </div>
-TODO: Sumbit and Save in EEPROM
 <input type="button" onclick="buttonPress()" class="button" value="Ändern" id="senden">
 
 <script>
@@ -78,7 +77,21 @@ slider.oninput = function() {
 function buttonPress() {
 	var xhttp = new XMLHttpRequest();
 		console.log("update Settings");
+		if (pw.value.length < 8  && pw.value.length != 0 ) {
+			//pw.value = "";
+			alert("Passwort zu kurz, mindestens 8 Zeichen.");
+			return;
+		}
 		xhttp.open('GET', 'settings/?name=' + ssid.value + '&pw=' + pw.value + '&deadBand=' + slider.value);
+		xhttp.onreadystatechange = function() { // Call a function when the state changes.
+			if (this.readyState === XMLHttpRequest.DONE) {
+				if (this.status === 200) {
+					alert("Einstellungen gespeichert!");
+				}else {
+					alert("Fehler beim senden!");
+				}
+			}
+		}
 		xhttp.send();
 }
 </script>

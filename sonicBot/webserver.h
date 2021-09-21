@@ -260,7 +260,9 @@ String processor(const String& var)
   } else if (var == "BOT_PASSWORD") {
     return String(configSet.pw);
   }
+  #ifdef DEBUG
   Serial.println(var);
+  #endif
   return String();
 }
 
@@ -284,13 +286,14 @@ bool initWebserver(){
   #ifdef DEBUG
   Serial.println("DefinesFehlen");
   #endif
+  #ifdef DEBUG
+    Serial.println(configSet.ssid);
+    Serial.println(configSet.pw);
+  #endif
   #ifdef ESP32
     WiFi.softAP(configSet.ssid, configSet.pw); //Create WiFi hotspot
   #else
     WiFi.softAP(configSet.ssid, configSet.pw); //Create WiFi hotspot
-  #endif
-  #ifdef DEBUG
-  Serial.println("Doch nicht");
   #endif
   // Popup DNS
   //dnsServer.start(DNS_PORT, "*", apIP);
@@ -298,6 +301,7 @@ bool initWebserver(){
   
   #ifdef DEBUG
   Serial.print("Access Point \"");
+  Serial.print(configSet.ssid);
   Serial.println("\" started");
   Serial.print("IP address:\t");
   Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer

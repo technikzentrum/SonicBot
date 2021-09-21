@@ -1,11 +1,11 @@
 #include <EEPROM.h>
-int eepromMagic = 42;
+int eepromMagic = 43;
 
 typedef struct
 {
   int deadBand = 200;
-  char ssid[25] = "TZL-Bot";
-  char pw[25] = "";
+  char ssid[33] = "TZL-Bot";
+  char pw[65] = "";
   int validation = eepromMagic;
 }
 ConfigLoad;
@@ -43,48 +43,48 @@ ConfigLoad configSet;
 //#######################   Defines for Arduino OTA
 //#define OTAUpdate //uncomment line to enable OTA update
 
-int writeBytes(int address, const void* value, size_t len)
-{
-  if (!value || !len)
-    return 0;
-  #ifdef ESP32
-    return EEPROM.writeBytes(address, value, len);
-  #else
-    EEPROM.put(0, value);
-  #endif
-  return 1;
-}
-
-size_t readBytes(int address, void* value, size_t maxLen)
-{
-  if (!value)
-    return 0;
-  #ifdef ESP32
-    return EEPROM.readBytes(address, value, maxLen);
-  #else
-    EEPROM.get(0, value);
-  #endif
-  return 1;
-}
-
 void saveInEEPROM()
 {
-  writeBytes(0, &configSet, sizeof(configSet));
+  #ifdef DEBUG
+  Serial.println("Schreibe Daten");
+  #endif
+  configSet.validation = eepromMagic;
+  #ifdef ESP32
+    return EEPROM.writeBytes(0, configSet, len);
+  #else
+    EEPROM.put(0, configSet);
+  #endif
   EEPROM.commit();    //Store data to EEPROM
 }
 
 void readOutEEPROM() {
   ConfigLoad temp;
-  readBytes(0, &temp, sizeof(temp));
+  #ifdef DEBUG
+  Serial.println("lese Daten");
+  #endif
+  #ifdef ESP32
+    return EEPROM.readBytes(address, temp, sizeof(temp));
+  #else
+    EEPROM.get(0, temp);
+  #endif
   if (temp.validation != eepromMagic) {
+    #ifdef DEBUG
+      Serial.println("Keine Daten gefunden Schreibe neue.");
+    #endif
     saveInEEPROM();
   } else {
+    #ifdef DEBUG
+      Serial.println("Übernehme Daten aus EEPROM");
+    #endif
     configSet = temp;
+    #ifdef DEBUG
+      Serial.println(configSet.ssid);
+    #endif
   }
 }
 
 void initEEPROM()
 {
-  EEPROM.begin(sizeof(configSet)+2);  //Initialize EEPROM
+  EEPROM.begin(512);  //Initialize EEPROM
   readOutEEPROM();
 }
