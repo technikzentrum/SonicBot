@@ -108,6 +108,16 @@ void webElement(String name, String text, String typee, String action) {
   #endif
 }
 
+void setIntervall(int intervall) {
+  #ifdef ESP32// no Racecondition
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  #endif
+  dataSend.add(serialized("{\"type\":\"updateintervall\", \"value\":\"" + String(intervall) + "\"}"));
+  #ifdef ESP32// no Racecondition
+  xSemaphoreGive(mutex);
+  #endif
+}
+
 void changeCardText(String name, String text){
   webElement(name, text, "card", "update");
 }
@@ -163,6 +173,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     addCard("left", "MotorL:0 % ", client);
     addCard("sonnic", "Distance: ", client);
     addCard("right", "MotorR:0 % ", client);
+    #ifdef DEBUG
+      setIntervall(300);
+    #endif
     wsclient = client;
     addButton("btn1", "Change to sonnic mode", []() {
       manualMode = !manualMode;
@@ -170,8 +183,10 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
          Serial.println("Manuelmode Changed");
       #endif
       if (manualMode) {
+        setMotorSpeed(0, 0);
         changeButtonText("btn1", "Change to sonnic mode");
       } else {
+        setMotorSpeed(0, 0);
         changeButtonText("btn1", "Change to manuel mode");
       }
       }, client);

@@ -274,9 +274,11 @@
 	}
 
 	function buttonPress(id) {
-		var xhttp = new XMLHttpRequest();
-		xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
-    	xhttp.send();
+		websocket.send('{"button":"'+id+'"}');
+			
+		//var xhttp = new XMLHttpRequest();
+		//xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
+    	//xhttp.send();
 	}
 	
 	function initWebSocket() {
@@ -332,6 +334,10 @@
 				tempelement.innerHTML = '<p>' + content.text + '</p>';
 			}
 		}
+		if (content.type == 'updateintervall') {
+			intervallSend = content.value;
+			console.log('Updateintervall: ' + intervallSend);
+		}
 	}
 	
 	function parseEvent(event) {
@@ -360,6 +366,9 @@
 					var tempelement = document.getElementById(content["data"][i].name);
 					tempelement.innerHTML = '<p>' + content["data"][i].text + '</p>';
 				}
+			}else if (content["data"][i].type == 'updateintervall') {
+				intervallSend = content["data"][i].value;
+				console.log('Updateintervall: ' + intervallSend);
 			}
 		}
 	}
