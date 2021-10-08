@@ -4,6 +4,7 @@
 int angleX = 90;
 int angleY = 90;
 bool manualMode = true;
+bool modeChanged = false;
 
 //#######################   Functions Motor
 
@@ -46,6 +47,17 @@ int angleToMotorSpeed (int angle) {
 }
 
 void setMotorSpeed(int leftMotor, int rightMotor) {
+  if (configSet.swapMotors) {
+    int tempt = leftMotor;
+    leftMotor = rightMotor;
+    rightMotor = tempt;
+  }
+  if (configSet.invertLeftMotor) {
+    leftMotor = leftMotor *-1;
+  }
+  if (configSet.invertRightMotor) {
+    rightMotor = rightMotor *-1;
+  }
   if (leftMotor < - configSet.deadBand) {   //Turn left
     #ifdef ESP32
     ledcWrite(enALEDChannel, - leftMotor);

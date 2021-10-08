@@ -18,6 +18,7 @@
 static SemaphoreHandle_t mutex;
 #endif
   extern bool manualMode;
+  extern bool modeChanged;
 	extern int angleX;
 	extern int angleY;
 	extern void setMotorSpeed(int leftMotor, int rightMotor);
@@ -179,6 +180,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     wsclient = client;
     addButton("btn1", "Change to sonnic mode", []() {
       manualMode = !manualMode;
+      modeChanged = true;
       #ifdef DEBUG
          Serial.println("Manuelmode Changed");
       #endif
@@ -350,6 +352,12 @@ bool initWebserver(){
           p->value().toCharArray(configSet.pw, 25);
         } else if (p->name() == "deadBand") {
           configSet.deadBand = p->value().toInt();
+        } else if (p->name() == "invertL") {
+          configSet.invertLeftMotor = p->value() == "true";;
+        } else if (p->name() == "invertR") {
+          configSet.invertRightMotor = p->value() == "true";
+        } else if (p->name() == "invertdirection") {
+          configSet.swapMotors = p->value() == "true";
         } else {
           #ifdef DEBUG
             Serial.print("unknown name: ");

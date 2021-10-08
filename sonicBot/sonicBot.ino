@@ -84,6 +84,9 @@ void loop()
     } else {
       setMotorSpeed(-800, -800);
     }
+  } else if (modeChanged){// End of SonnyMode
+    modeChanged = false;
+    setMotorSpeed(0,0);
   }
   if (last_tick_distance + 500 < millis()) {
     //getUSDistance();

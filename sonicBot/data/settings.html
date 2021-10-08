@@ -42,6 +42,66 @@
   background: #04AA6D;
   cursor: pointer;
 }
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider1 {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider1:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider1 {
+  background-color: #2196F3;
+}
+
+input:focus + .slider1 {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider1:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider1.round {
+  border-radius: 34px;
+}
+
+.slider1.round:before {
+  border-radius: 50px;
+}
 </style>
 
 </head>
@@ -61,6 +121,25 @@
   <input type="range" min="0" max="1024" value="%DEAD_BAND%" class="slider" id="deadband">
   <p>Value: <span id="demo"></span></p>
 </div>
+
+<p>Switch left Motor direction</p>
+<label class="switch">
+  <input type="checkbox" id="swl">
+  <span class="slider1 round"></span>
+</label>
+
+<p>Switch right Motor direction</p>
+<label class="switch">
+  <input type="checkbox" id="swr">
+  <span class="slider1 round"></span>
+</label>
+
+<p>invert directions</p>
+<label class="switch">
+  <input type="checkbox" id="swd">
+  <span class="slider1 round"></span>
+</label>
+<p> </p>
 <input type="button" onclick="buttonPress()" class="button" value="Ändern" id="senden">
 
 <script>
@@ -68,6 +147,9 @@ var ssid = document.getElementById("name");
 var pw = document.getElementById("pw");
 var slider = document.getElementById("deadband");
 var output = document.getElementById("demo");
+var switchl = document.getElementById("swl");
+var switchr = document.getElementById("swr");
+var switchd = document.getElementById("swd");
 output.innerHTML = slider.value;
 
 slider.oninput = function() {
@@ -82,7 +164,8 @@ function buttonPress() {
 			alert("Passwort zu kurz, mindestens 8 Zeichen.");
 			return;
 		}
-		xhttp.open('GET', 'settings/?name=' + ssid.value + '&pw=' + pw.value + '&deadBand=' + slider.value);
+		
+		xhttp.open('GET', 'settings/?name=' + ssid.value + '&pw=' + pw.value + '&deadBand=' + slider.value + '&invertL=' + switchl.checked + '&invertR=' + switchr.checked + '&invertdirection=' + switchd.checked);
 		xhttp.onreadystatechange = function() { // Call a function when the state changes.
 			if (this.readyState === XMLHttpRequest.DONE) {
 				if (this.status === 200) {
