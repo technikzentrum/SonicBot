@@ -102,6 +102,22 @@ input:checked + .slider1:before {
 .slider1.round:before {
   border-radius: 50px;
 }
+
+.button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 2vw 2vw;
+	border-radius: 15px;
+ box-shadow: 0 9px #999;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 2px 2px;
+  cursor: pointer;
+	-webkit-appearance: none;
+}
 </style>
 
 </head>
@@ -124,19 +140,19 @@ input:checked + .slider1:before {
 
 <p>Switch left Motor direction</p>
 <label class="switch">
-  <input type="checkbox" id="swl">
+  <input type="checkbox" id="swl" %INVERT_LEFT_MOTOR%>
   <span class="slider1 round"></span>
 </label>
 
 <p>Switch right Motor direction</p>
 <label class="switch">
-  <input type="checkbox" id="swr">
+  <input type="checkbox" id="swr" %INVERT_RIGHT_MOTOR%>
   <span class="slider1 round"></span>
 </label>
 
 <p>invert directions</p>
 <label class="switch">
-  <input type="checkbox" id="swd">
+  <input type="checkbox" id="swd" %SWAP_MOTORS%>
   <span class="slider1 round"></span>
 </label>
 <p> </p>

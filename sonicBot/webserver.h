@@ -166,14 +166,14 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     #ifdef DEBUG
       Serial.println("Websocket client connection received");
     #endif
+    addCard("left", "MotorL:0 % ", client);
+    addCard("sonnic", "Distance: ", client);
+    addCard("right", "MotorR:0 % ", client);
     addButton("btn0", "User Button", [] {
       #ifdef DEBUG
         Serial.println("User action");
       #endif
       }, client);
-    addCard("left", "MotorL:0 % ", client);
-    addCard("sonnic", "Distance: ", client);
-    addCard("right", "MotorR:0 % ", client);
     #ifdef DEBUG
       setIntervall(300);
     #endif
@@ -256,10 +256,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
           } else {
             rightMotor = rightMotor - steer * rightMotor;
           }
-          
-          
-          changeCardText("left", "MotorL: " + String(map(leftMotor, 0, 1024, 0, 100) ) + " % ");
-          changeCardText("right", "MotorR: " + String(map(rightMotor, 0, 1024, 0, 100)) + " % ");
           setMotorSpeed(leftMotor, rightMotor);
         }
       }
@@ -274,6 +270,24 @@ String processor(const String& var)
     return configSet.ssid;
   } else if (var == "DEAD_BAND") {
     return String(configSet.deadBand);
+  } else if (var == "INVERT_LEFT_MOTOR") {
+    if (configSet.invertLeftMotor) {
+      return "checked";
+    } else {
+      return "";
+    }
+  } else if (var == "INVERT_RIGHT_MOTOR") {
+    if (configSet.invertRightMotor) {
+      return "checked";
+    } else {
+      return "";
+    }
+  } else if (var == "SWAP_MOTORS") {
+    if (configSet.swapMotors) {
+      return "checked";
+    } else {
+      return "";
+    }
   } else if (var == "BOT_PASSWORD") {
     return String(configSet.pw);
   }

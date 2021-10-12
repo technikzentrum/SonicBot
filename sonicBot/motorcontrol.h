@@ -5,6 +5,8 @@ int angleX = 90;
 int angleY = 90;
 bool manualMode = true;
 bool modeChanged = false;
+int ignore = 100;
+extern void changeCardText(String name, String text);
 
 //#######################   Functions Motor
 
@@ -16,7 +18,7 @@ void initMotorPins() {
   ledcSetup(enALEDChannel, 20000, 10); // 2 kHz PWM, 10-bit resolution
   ledcSetup(enBLEDChannel, 20000, 10); // 2 kHz PWM, 10-bit resolution
   #else
-  analogWriteFreq(20000);
+  analogWriteFreq(20000);// -> Leiser, aber mehr Schaltstrom
   analogWriteRange(1023);
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
@@ -59,7 +61,10 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   if (configSet.invertRightMotor) {
     rightMotor = rightMotor *-1;
   }
-  if (leftMotor < - configSet.deadBand) {   //Turn left
+  changeCardText("left", "MotorL: " + String(map(leftMotor, 0, 1024, 0, 100) ) + " % ");
+  changeCardText("right", "MotorR: " + String(map(rightMotor, 0, 1024, 0, 100)) + " % ");
+  if (leftMotor < - ignore) {   //Turn left
+    leftMotor = map(leftMotor, 0, -1024, -configSet.deadBand, -1024);
     #ifdef ESP32
     ledcWrite(enALEDChannel, - leftMotor);
     #else
@@ -70,7 +75,8 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #ifdef DEBUG
     Serial.println("Left motor: " + String((leftMotor*-1)));
     #endif
-  } else if (leftMotor > configSet.deadBand) {
+  } else if (leftMotor > ignore) {
+    leftMotor = map(leftMotor, 0, 1024, configSet.deadBand, 1024);
     #ifdef ESP32
     ledcWrite(enALEDChannel, leftMotor);
     #else
@@ -87,9 +93,11 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #ifdef DEBUG
     Serial.println("Left motor: STOPPED");
     #endif
-  }
+    changeCardText("left", "MotorL: 0% ");
+    }
 
-  if (rightMotor < - configSet.deadBand) {   //Turn left
+  if (rightMotor < - ignore) {   //Turn left
+    rightMotor = map(rightMotor, 0, -1024, -configSet.deadBand, -1024);
     #ifdef ESP32
     ledcWrite(enBLEDChannel, - rightMotor);
     #else
@@ -100,7 +108,8 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #ifdef DEBUG
     Serial.println("Right motor: " + String((rightMotor*-1)));
     #endif
-  } else if (rightMotor > configSet.deadBand) {
+  } else if (rightMotor > ignore) {
+    rightMotor = map(rightMotor, 0, 1024, configSet.deadBand, 1024);
     #ifdef ESP32
     ledcWrite(enBLEDChannel, rightMotor);
     #else
@@ -117,5 +126,6 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #ifdef DEBUG
     Serial.println("Right motor: STOPED");
     #endif
+    changeCardText("right", "MotorR: 0% ");
   }
 }
