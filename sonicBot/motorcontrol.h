@@ -16,6 +16,7 @@ void initMotorPins() {
   ledcSetup(enALEDChannel, 20000, 10); // 2 kHz PWM, 10-bit resolution
   ledcSetup(enBLEDChannel, 20000, 10); // 2 kHz PWM, 10-bit resolution
   #else
+  analogWriteFreq(20000);
   analogWriteRange(1023);
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);

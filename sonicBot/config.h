@@ -3,7 +3,7 @@ int eepromMagic = 43;
 
 typedef struct
 {
-  int deadBand = 200;
+  int deadBand = 500;
   char ssid[33] = "TZL-Bot";
   char pw[65] = "";
   boolean invertLeftMotor = false;
