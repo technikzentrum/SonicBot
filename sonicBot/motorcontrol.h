@@ -1,6 +1,7 @@
-
-
+#include <Servo.h> 
+Servo servoObject;
 // ### Bot Status ###
+int servoPosition = 90;
 int angleX = 90;
 int angleY = 90;
 bool manualMode = true;
@@ -32,6 +33,8 @@ void initMotorPins() {
   digitalWrite(in2, LOW);
   digitalWrite(in3, LOW);
   digitalWrite(in4, LOW);
+  // Servo
+  servoObject.attach(servoPin, 600, 2380);
 }
 
 /**
@@ -128,4 +131,9 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
     #endif
     changeCardText("right", "MotorR: 0% ");
   }
+}
+
+void setServo(int pos) {
+  servoObject.write(pos);
+  changeCardText("servoC", "Servo: " + String(pos) + "° ");
 }

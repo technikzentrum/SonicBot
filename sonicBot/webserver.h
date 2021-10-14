@@ -23,11 +23,12 @@ static SemaphoreHandle_t mutex;
 	extern int angleY;
 	extern void setMotorSpeed(int leftMotor, int rightMotor);
 	extern int angleToMotorSpeed (int angle);
+ extern void setServo(int pos);
  extern ConfigLoad configSet;
 
 extern "C" {
 typedef void (*callbackFunction)(void);
-typedef void (*parameterizedCallbackFunction)(void *);
+typedef void (*parameterizedCallbackFunction)(int);
 }
 
 struct btnSave {
@@ -35,6 +36,10 @@ struct btnSave {
   callbackFunction function;
 } ;
 
+struct sliderSave {
+  String id;
+  parameterizedCallbackFunction function;
+} ;
 	// ### Webserver ###
 	IPAddress apIP(192,1,1,1);
 	AsyncWebServer server(80);
@@ -46,6 +51,8 @@ struct btnSave {
   JsonArray dataSend;
   btnSave callbacks[6];
   int btnCounter = 0;
+  sliderSave sliderCallbacks[6];
+  int sliderCounter = 0;
   AsyncWebSocketClient * wsclient;
   AsyncEventSource events("/events");
 
@@ -123,6 +130,13 @@ void changeCardText(String name, String text){
   webElement(name, text, "card", "update");
 }
 
+void addSlider(String name, String text, parameterizedCallbackFunction newFunction, AsyncWebSocketClient * client){
+  client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"slider\", \"min\":\"0\", \"max\":\"180\", \"value\":\"90\", \"action\":\"create\"}");
+  sliderCallbacks[sliderCounter].id = name;
+  sliderCallbacks[sliderCounter].function = newFunction;
+  sliderCounter++;
+}
+
 void addButton(String name, String text, callbackFunction newFunction, AsyncWebSocketClient * client){
   client->text("{\"name\":\"" + name + "\", \"text\":\"" + text + "\", \"type\":\"btn\", \"action\":\"create\"}");
   callbacks[btnCounter].id = name;
@@ -174,10 +188,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         Serial.println("User action");
       #endif
       }, client);
-    #ifdef DEBUG
-      setIntervall(300);
-    #endif
-    wsclient = client;
     addButton("btn1", "Change to sonnic mode", []() {
       manualMode = !manualMode;
       modeChanged = true;
@@ -192,11 +202,24 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         changeButtonText("btn1", "Change to manuel mode");
       }
       }, client);
+      addCard("servoC", "Servo: 0° ", client);
+      addSlider("servoS", "111", [](int a) {
+      #ifdef DEBUG
+         Serial.print("Servo setzen auf: ");
+         Serial.println(a);
+      #endif
+      setServo(a);
+      }, client);
+      #ifdef DEBUG
+        setIntervall(300);
+      #endif
   } else if(type == WS_EVT_DISCONNECT){
     if (ws.getClients().length()==0) {
       btnCounter = 0;
+      sliderCounter = 0;
     }
     btnCounter = 0;
+    sliderCounter = 0;
     wsclient = NULL;
     angleX = 90;
     angleY = 90;
@@ -229,6 +252,15 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
           for (int i = 0; i<btnCounter; i++) {
             if (id.equals(callbacks[i].id)){
               callbacks[i].function();
+            }
+          }
+        }
+        if (doc.containsKey("slider")) {
+          String id = doc["slider"];
+          int value = doc["value"];
+          for (int i = 0; i<sliderCounter; i++) {
+            if (id.equals(sliderCallbacks[i].id)){
+              sliderCallbacks[i].function(value);
             }
           }
         }

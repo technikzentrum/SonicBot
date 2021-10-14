@@ -141,7 +141,41 @@
 		display: inline-block;
 	}
 	
-	.w3-card {box-shadow:0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12)}
+	.w3-card {
+		box-shadow:0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12);
+		margin-top: 10px;
+	}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100vw;
+  height: 25px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  background: #04AA6D;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  background: #04AA6D;
+  cursor: pointer;
+}
 </style>
 
 </head>
@@ -166,8 +200,8 @@
 	window.addEventListener('load', onLoad);
 	function onLoad(event) {
 		moves.innerHTML = 'Verbinde';
-		initEventSource();
 		initWebSocket();
+		initEventSource();
 	}
 
 	var startmove = document.querySelector('.startmove');
@@ -184,6 +218,7 @@
 	var notSend = false;
 	var sendValue = null;
 	var intervallSend = 100; //ms
+	var isWSConnected = false;
 
 	startmove.addEventListener('touchstart', function(eve){
 		var  touchobj = eve.changedTouches[0]; // erster Finger
@@ -281,6 +316,15 @@
     	//xhttp.send();
 	}
 	
+	function updateSlider(id, value) {
+		websocket.send('{"slider":"'+id+'", "value":'+value+'}');
+		console.log('{"slider":"'+id+'", "value":'+value+'}');
+		//var xhttp = new XMLHttpRequest();
+		//xhttp.open('GET', '?angleX='+Math.round(y)+'&angleY='+Math.round(x));
+    	//xhttp.send();
+	}
+	
+	
 	function initWebSocket() {
 		if (reconnecct) {
 			setColor(connectionindicator, 'blue');
@@ -297,9 +341,11 @@
 		console.log('Connection opened');
 		moves.innerHTML = 'Verbindung hestellt';
 		setColor(connectionindicator, 'green');
+		isWSConnected = true;
 	}
 
 	function onClose(event) {
+		isWSConnected = false;
 		moves.innerHTML = 'Verbindung unterbrochen';
 		console.log('Connection closed');
 		setColor(connectionindicator, 'red');
@@ -326,6 +372,15 @@
 				tempelement.value = content.text;
 			}
 		}
+		if (content.type == 'slider') {
+			console.log(content);
+			if (content.action == 'create') {
+				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card">  <input type="range" min="' + content.min + '" max="' + content.max + '" value="' + content.value + '" class="slider" id="' + content.name + '" onchange="updateSlider(this.id, this.value)"></div>';
+			} else if (content.action == 'update'){
+				var tempelement = document.getElementById(content.name);
+				tempelement.value = content.value;
+			}
+		}
 		if (content.type == 'card') {
 			if (content.action == 'create') {
 				buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content.name + '"><p>' + content.text + '</p></div> ';
@@ -344,32 +399,46 @@
 		// MAche etwas mit Daten vom Bot
 		var content = JSON.parse(event);
 		console.log(content);
-		for (var i = 0; i < content["data"].length; i++){
-			if (content["data"][i].type == 'disconnect') {
-				reconnecct = false;
-				startmove.innerHTML = '<h2>Verbindung unterbrochen Bot in benutzung</h2>';
-				console.log('Connection closed');
-				setColor(connectionindicator, 'red');
-				websocket.close();
-				buttonSpace.innerHTML = '<form action="/dcAll">    <input type="submit" value="Force disconnect all" /></form>';
-			}else if (content["data"][i].type == 'btn') {
-				if (content["data"][i].action == 'create') {
-					buttonSpace.innerHTML = buttonSpace.innerHTML + '<input type="button" onclick="buttonPress(this.id)" class="button" value="' + content["data"][i].text + '" id="' + content["data"][i].name + '">';
-				} else if (content["data"][i].action == 'update'){
-					var tempelement = document.getElementById(content["data"][i].name);
-					tempelement.value = content["data"][i].text;
+		if (isWSConnected) {
+			for (var i = 0; i < content["data"].length; i++){
+				if (content["data"][i].type == 'disconnect') {
+					reconnecct = false;
+					startmove.innerHTML = '<h2>Verbindung unterbrochen Bot in benutzung</h2>';
+					console.log('Connection closed');
+					setColor(connectionindicator, 'red');
+					websocket.close();
+					buttonSpace.innerHTML = '<form action="/dcAll">    <input type="submit" value="Force disconnect all" /></form>';
+				}else if (content["data"][i].type == 'btn') {
+					if (content["data"][i].action == 'create') {
+						buttonSpace.innerHTML = buttonSpace.innerHTML + '<input type="button" onclick="buttonPress(this.id)" class="button" value="' + content["data"][i].text + '" id="' + content["data"][i].name + '">';
+					} else if (content["data"][i].action == 'update'){
+						var tempelement = document.getElementById(content["data"][i].name);
+						tempelement.value = content["data"][i].text;
+					}
+				}else if (content["data"][i].type == 'slider') {
+					console.log(content["data"][i]);
+					if (content["data"][i].action == 'create') {
+						buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="slidecontainer">  <input type="range" min="' + content["data"][i].min + '" max="' + content["data"][i].max + '" value="' + content["data"][i].value + '" class="slider" id="' + content["data"][i].name + '">  <p>Value: <span id="demo">' + content["data"][i].value + '</span></p></div>';
+					} else if (content["data"][i].action == 'update'){
+						var tempelement = document.getElementById(content["data"][i].name);
+						tempelement.value = content["data"][i].value;
+					}
+				}else if (content["data"][i].type == 'card') {
+					if (content["data"][i].action == 'create') {
+						buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content["data"][i].name + '"><p>' + content["data"][i].text + '</p></div> ';
+					} else if (content["data"][i].action == 'update'){
+						var tempelement = document.getElementById(content["data"][i].name);
+						tempelement.innerHTML = '<p>' + content["data"][i].text + '</p>';
+					}
+				}else if (content["data"][i].type == 'updateintervall') {
+					intervallSend = content["data"][i].value;
+					console.log('Updateintervall: ' + intervallSend);
+				} else {
+					console.log('Nicht bekannt: ' + content["data"][i]);
 				}
-			}else if (content["data"][i].type == 'card') {
-				if (content["data"][i].action == 'create') {
-					buttonSpace.innerHTML = buttonSpace.innerHTML + '<div class="w3-card" id="' + content["data"][i].name + '"><p>' + content["data"][i].text + '</p></div> ';
-				} else if (content["data"][i].action == 'update'){
-					var tempelement = document.getElementById(content["data"][i].name);
-					tempelement.innerHTML = '<p>' + content["data"][i].text + '</p>';
-				}
-			}else if (content["data"][i].type == 'updateintervall') {
-				intervallSend = content["data"][i].value;
-				console.log('Updateintervall: ' + intervallSend);
 			}
+		} else {
+			console.log('Nicht verbunden zu Websoket.');
 		}
 	}
 	

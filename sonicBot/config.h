@@ -25,6 +25,8 @@ ConfigLoad configSet;
 #define in4 18 //S3
 #define enB 5 //D1
 #define enBLEDChannel 1
+// ### Define Servo ###
+#define servoPin 17
 // ### Defines for Sonic Module ###
 #define TRIGGER 17
 #define ECHO 16
@@ -36,6 +38,8 @@ ConfigLoad configSet;
 #define in3 16 //D0
 #define in4 D8 //S3
 #define enB 5 //D1
+// ### Define Servo ###
+#define servoPin D7
 // ### Defines for Sonic Module ###
 #define TRIGGER D5
 #define ECHO D6
