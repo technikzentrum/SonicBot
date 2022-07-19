@@ -90,7 +90,8 @@ void loop()
   }
   if (last_tick_distance + 500 < millis()) {
     //getUSDistance();
-      long distcnace = getUSDistance();// TODO: Use interruptand none Blocking mode
+      long distcnace = 
+();// TODO: Use interruptand none Blocking mode
       changeCardText("sonnic", "Distance: " + String(distcnace));
       #ifdef DEBUG
         Serial.println("Distance: " + String(distcnace));
