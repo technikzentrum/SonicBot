@@ -181,7 +181,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       Serial.println("Websocket client connection received");
     #endif
     addCard("left", "MotorL:0 % ", client);
-    addCard("sonnic", "Distance: ", client);
     addCard("right", "MotorR:0 % ", client);
     addButton("btn0", "User Button", [] {
       #ifdef DEBUG
@@ -416,7 +415,7 @@ bool initWebserver(){
       if (request -> params() == 0) {
         request->send(SPIFFS, "/index.html");
       } else {
-        saveInEEPROM();
+        //saveInEEPROM();
         request -> send(200);
       }
   });

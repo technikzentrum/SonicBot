@@ -12,29 +12,7 @@
 #else
 #define EVENT_INTERVALL 200
 #endif
-
-// ### Sonnic Varriables ###
-long duration = 0;
-long distance = 0;
 long last_tick = 0;
-long last_tick_distance = 0;
-
-//#######################   Functions Sonnic
-/**
-   Function to receive the distance measured by the us-sensor in cm
-*/
-long getUSDistance() {
-  digitalWrite(TRIGGER, LOW); //Hier nimmt man die Spannung für kurze Zeit vom Trigger-Pin, damit man später beim senden des Trigger-Signals ein rauschfreies Signal hat.
-  delay(1); //duration: 5 Millisekunden
-  digitalWrite(TRIGGER, HIGH); //Jetzt sendet man eine Ultraschallwelle los.
-  delay(1); //Dieser „Ton“ erklingt für 10 Millisekunden.
-  digitalWrite(TRIGGER, LOW);//Dann wird der „Ton“ abgeschaltet.
-  duration = pulseIn(ECHO, HIGH, 6000); //Mit dem Befehl „pulseIn“ zählt der Mikrokontroller die Zeit in Mikrosekunden, bis der Schall zum Ultraschallsensor zurückkehrt.
-  if (duration != 0) {  
-    distance = (duration / 2) * 0.03432; //Nun berechnet man die distance in Zentimetern. Man teilt zunächst die Zeit durch zwei (Weil man ja nur eine Strecke berechnen möchte und nicht die Strecke hin- und zurück). Den Wert multipliziert man mit der Schallgeschwindigkeit in der Einheit Zentimeter/Mikrosekunde und erhält dann den Wert in Zentimetern.
-  }
-  return distance;
-}
 
 //#######################   SETUP
 void setup()
@@ -46,11 +24,7 @@ void setup()
   //Initialize H bridge
   initMotorPins();
 
-  //Init US
-  pinMode(TRIGGER, OUTPUT);
-  pinMode(ECHO, INPUT);
-
-  initEEPROM();
+  //initEEPROM();
   
   // WLAN & Webserver
   initSPIFFS();
@@ -69,35 +43,6 @@ void setup()
 
 void loop()
 {
-  if (!manualMode) {
-    /**
-       TODO: Implement code for us-sensor
-       The following functions might be helpful:
-           long distance = getUSDistance();         //Get us-distance in cm
-           Serial.println(distance);                //print distance to console
-           setMotorSpeed(1023, 1023);               //set motor speed for left and right wheel
-           delay(100)                               //Add additional delay
-    */
-    long distanceInCm = getUSDistance();
-    if (distanceInCm<15){
-      setMotorSpeed(900, -900);
-    } else {
-      setMotorSpeed(-800, -800);
-    }
-  } else if (modeChanged){// End of SonnyMode
-    modeChanged = false;
-    setMotorSpeed(0,0);
-  }
-  if (last_tick_distance + 500 < millis()) {
-    //getUSDistance();
-      long distcnace = 
-();// TODO: Use interruptand none Blocking mode
-      changeCardText("sonnic", "Distance: " + String(distcnace));
-      #ifdef DEBUG
-        Serial.println("Distance: " + String(distcnace));
-      #endif
-    last_tick_distance = millis();
-  }
   if (last_tick + EVENT_INTERVALL < millis()) {
     last_tick = millis();
     updateWebPage();

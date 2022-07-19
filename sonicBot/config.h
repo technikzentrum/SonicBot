@@ -15,49 +15,33 @@ ConfigLoad;
 
 ConfigLoad configSet;
 //#######################   PIN Defines
-#ifdef ESP32
 // ### Defines for H bridge ###
-#define enA 23 //D2
-#define enALEDChannel 0
-#define in1 22 //D3   
-#define in2 21 //D4   
-#define in3 19 //D0
-#define in4 18 //S3
-#define enB 5 //D1
-#define enBLEDChannel 1
+#define in1ALEDChannel 0
+#define in2ALEDChannel 1
+#define in1 19    
+#define in2 18   
+#define in3 21
+#define in4 22
+#define in1BLEDChannel 2
+#define in2BLEDChannel 3
 // ### Define Servo ###
-#define servoPin 17
-// ### Defines for Sonic Module ###
-#define TRIGGER 17
-#define ECHO 16
-#else
-// ### Defines for H bridge ###
-#define enA 4 //D2
-#define in1 0 //D3   
-#define in2 2 //D4   
-#define in3 16 //D0
-#define in4 D8 //S3
-#define enB 5 //D1
-// ### Define Servo ###
-#define servoPin D7
-// ### Defines for Sonic Module ###
-#define TRIGGER D5
-#define ECHO D6
-#endif
+#define servoPinH 16
+#define servoPinG 17
+
 
 //#define DEBUG           // Uncomment for non Serial Use
 
 //#######################   Defines for Arduino OTA
 //#define OTAUpdate //uncomment line to enable OTA update
 
-void saveInEEPROM()
+/*void saveInEEPROM()
 {
   #ifdef DEBUG
   Serial.println("Schreibe Daten");
   #endif
   configSet.validation = eepromMagic;
   #ifdef ESP32
-    return EEPROM.writeBytes(0, configSet, len);
+    return EEPROM.write(0, configSet);
   #else
     EEPROM.put(0, configSet);
   #endif
@@ -70,7 +54,7 @@ void readOutEEPROM() {
   Serial.println("lese Daten");
   #endif
   #ifdef ESP32
-    return EEPROM.readBytes(address, temp, sizeof(temp));
+    return EEPROM.read(address, temp);
   #else
     EEPROM.get(0, temp);
   #endif
@@ -94,4 +78,4 @@ void initEEPROM()
 {
   EEPROM.begin(512);  //Initialize EEPROM
   readOutEEPROM();
-}
+}*/
