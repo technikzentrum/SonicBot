@@ -17,13 +17,14 @@
 #ifdef ESP32// no Racecondition
 static SemaphoreHandle_t mutex;
 #endif
-  extern bool manualMode;
+  extern bool servoH;
+  extern bool servoG;
   extern bool modeChanged;
 	extern int angleX;
 	extern int angleY;
 	extern void setMotorSpeed(int leftMotor, int rightMotor);
 	extern int angleToMotorSpeed (int angle);
- extern void setServo(int pos);
+ extern void setServo(int coun,int pos);
  extern ConfigLoad configSet;
 
 extern "C" {
@@ -182,32 +183,28 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     #endif
     addCard("left", "MotorL:0 % ", client);
     addCard("right", "MotorR:0 % ", client);
-    addButton("btn0", "User Button", [] {
-      #ifdef DEBUG
-        Serial.println("User action");
-      #endif
-      }, client);
-    addButton("btn1", "Change to sonnic mode", []() {
-      manualMode = !manualMode;
-      modeChanged = true;
-      #ifdef DEBUG
-         Serial.println("Manuelmode Changed");
-      #endif
-      if (manualMode) {
-        setMotorSpeed(0, 0);
-        changeButtonText("btn1", "Change to sonnic mode");
+    addButton("btn0", "Hoch", [] {
+      servoH = !servoH;
+      if (servoH) {
+        setServo(0, 30);
+        changeButtonText("btn0", "Hoch");
       } else {
-        setMotorSpeed(0, 0);
-        changeButtonText("btn1", "Change to manuel mode");
+        setServo(0,90);
+        changeButtonText("btn0", "Runter");
       }
       }, client);
-      addCard("servoC", "Servo: 0° ", client);
-      addSlider("servoS", "111", [](int a) {
+    addButton("btn1", "Zu", []() {
+      servoG = !servoG;
       #ifdef DEBUG
-         Serial.print("Servo setzen auf: ");
-         Serial.println(a);
+         Serial.println("Auf");
       #endif
-      setServo(a);
+      if (servoG) {
+        setServo(1,30);
+        changeButtonText("btn1", "Auf");
+      } else {
+        setServo(1,90);
+        changeButtonText("btn1", "Zu");
+      }
       }, client);
       #ifdef DEBUG
         setIntervall(300);
@@ -415,7 +412,7 @@ bool initWebserver(){
       if (request -> params() == 0) {
         request->send(SPIFFS, "/index.html");
       } else {
-        //saveInEEPROM();
+        saveInEEPROM();
         request -> send(200);
       }
   });

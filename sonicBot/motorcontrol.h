@@ -5,9 +5,12 @@ Servo servoObject2;
 int servoPosition = 90;
 int angleX = 90;
 int angleY = 90;
-bool manualMode = true;
+#define Servo_INTERVALL 2000
+bool servoH = true;
+bool servoG = true;
 bool modeChanged = false;
-int ignore = 100;
+int ignore = 70;
+long lastServo = 0;
 extern void changeCardText(String name, String text);
 
 //#######################   Functions Motor
@@ -26,8 +29,8 @@ void initMotorPins() {
   ledcWrite(in1BLEDChannel, 0);
   ledcWrite(in2BLEDChannel, 0);
   // Servo
-  servoObject.attach(servoPinH, 600, 2380);
-  servoObject2.attach(servoPinG, 600, 2380);
+  servoObject.attach(servoPinH,0);
+  servoObject2.attach(servoPinG,1);
 }
 
 /**
@@ -106,7 +109,11 @@ void setMotorSpeed(int leftMotor, int rightMotor) {
   }
 }
 
-void setServo(int pos) {
-  servoObject.write(pos);
-  changeCardText("servoC", "Servo: " + String(pos) + "° ");
+void setServo(int coun, int pos) {
+  lastServo = millis();
+  if (coun == 0) {
+    servoObject.write(pos);
+  }else {
+    servoObject2.write(pos);
+  }
 }

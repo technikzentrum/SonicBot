@@ -14,6 +14,7 @@
 #endif
 long last_tick = 0;
 
+
 //#######################   SETUP
 void setup()
 {
@@ -24,7 +25,7 @@ void setup()
   //Initialize H bridge
   initMotorPins();
 
-  //initEEPROM();
+  initEEPROM();
   
   // WLAN & Webserver
   initSPIFFS();
@@ -47,7 +48,9 @@ void loop()
     last_tick = millis();
     updateWebPage();
   }
-  
+  if (lastServo + Servo_INTERVALL < millis()) {
+    //TODO: Disable Servo
+  }
 #ifdef OTAUpdate
   OTAhandle();
 #endif
