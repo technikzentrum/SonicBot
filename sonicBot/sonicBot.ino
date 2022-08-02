@@ -10,7 +10,7 @@
 #ifdef DEBUG
 #define EVENT_INTERVALL 500
 #else
-#define EVENT_INTERVALL 200
+#define EVENT_INTERVALL 300
 #endif
 long last_tick = 0;
 

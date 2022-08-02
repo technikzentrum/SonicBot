@@ -1,6 +1,6 @@
 #include <Preferences.h>
 Preferences preferences;
-int eepromMagic = 43;
+int eepromMagic = 42;
 
 typedef struct
 {

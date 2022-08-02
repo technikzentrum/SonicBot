@@ -186,10 +186,10 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     addButton("btn0", "Hoch", [] {
       servoH = !servoH;
       if (servoH) {
-        setServo(0, 30);
+        setServo(0,110);
         changeButtonText("btn0", "Hoch");
       } else {
-        setServo(0,90);
+        setServo(0,0);
         changeButtonText("btn0", "Runter");
       }
       }, client);
@@ -202,7 +202,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         setServo(1,30);
         changeButtonText("btn1", "Auf");
       } else {
-        setServo(1,90);
+        setServo(1,140);
         changeButtonText("btn1", "Zu");
       }
       }, client);
