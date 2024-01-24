@@ -33,4 +33,25 @@ jobs:
         arduino-cli lib install "ArduinoJson"
 
     - name: Compile Sketch
-      run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 ${{ github.workspace }}/sonicBot/sonicBot.ino
+      run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/build/sonicBot/sonicBot.ino.bin
+        asset_name: sonicBot.ino.bin
+        asset_content_type: application/octet-stream
