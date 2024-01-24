@@ -1,5 +1,5 @@
 #include <EEPROM.h>
-int eepromMagic = 43;
+int eepromMagic = 42;
 
 typedef struct
 {
