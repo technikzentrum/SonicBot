@@ -33,4 +33,4 @@ jobs:
         arduino-cli lib install "ArduinoJson"
 
     - name: Compile Sketch
-      run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 ${{ github.workspace }}/path/to/your/sketch
+      run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 ${{ github.workspace }}/sonicBot/sonicBot.ino
