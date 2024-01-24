@@ -31,7 +31,6 @@ jobs:
         arduino-cli lib install "ESPAsyncTCP"
         arduino-cli lib install "ESPAsyncWebServer"
         arduino-cli lib install "ArduinoJson"
-        arduino-cli lib install "ESP8266WiFi"
 
     - name: Compile Sketch
       run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 ${{ github.workspace }}/path/to/your/sketch
