@@ -33,10 +33,9 @@ jobs:
     - name: Compile Sketch
       run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
 
-    - name: Create SPIFFS Image
+    - name: Compile Sketch and Create SPIFFS Image
       run: |
-        mkdir -p ${{ github.workspace }}/build/spiffs
-        mkspiffs -c ${{ github.workspace }}/sonicBot/data -p 256 -b 8192 -s 2072576 ${{ github.workspace }}/build/spiffs/spiffs.bin
+        arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build --build-path ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
 
     - name: List contents of build directory
       run: ls -lR ${{ github.workspace }}/build
