@@ -40,7 +40,7 @@ jobs:
       run: |
         /home/runner/.arduino15/packages/esp8266/tools/mkspiffs/3.1.0-gcc10.3-e5f9fec/mkspiffs \
           -c ${{ github.workspace }}/sonicBot/data \
-          -b 4096 \
+          -b 8192 \
           -p 256 \
           -s 0x200000 \
           ${{ github.workspace }}/build/spiffs.bin
