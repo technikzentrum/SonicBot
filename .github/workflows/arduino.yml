@@ -24,6 +24,9 @@ jobs:
     - name: Install ESP8266 Core
       run: arduino-cli core install esp8266:esp8266
 
+    - name: List contents of Core
+      run: ls -lR ${{ github.workspace }}
+
     - name: Install Libraries
       run: |
         arduino-cli lib install "ESPAsyncTCP"
@@ -33,9 +36,16 @@ jobs:
     - name: Compile Sketch
       run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
 
-    - name: Compile Sketch and Create SPIFFS Image
+    - name: Create SPIFFS Image
       run: |
-        arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build --build-path ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
+        ARDUINO_DIR=${{ github.workspace }}/arduino  # Setzen Sie den Pfad entsprechend Ihrer Workflow-Konfiguration
+        SPIFFS_VERSION=<Ihre SPIFFS-Version>  # Ersetzen Sie dies mit der korrekten Version
+        ${ARDUINO_DIR}/packages/esp8266/tools/mkspiffs/${SPIFFS_VERSION}/mkspiffs \
+          -c ${ARDUINO_DIR}/data \
+          -b 4096 \
+          -p 256 \
+          -s 0x100000 \
+          ${ARDUINO_DIR}/build/esp8266.esp8266.nodemcuv2/sonicBot.ino.spiffs.bin
 
     - name: List contents of build directory
       run: ls -lR ${{ github.workspace }}/build
