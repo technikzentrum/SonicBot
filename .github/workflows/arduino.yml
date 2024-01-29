@@ -2,10 +2,8 @@ name: ESP8266 Build
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-  workflow_dispatch:
+    branches: [master]
+  workflow_dispatch: # Ermöglicht das manuelle Auslösen des Workflows
 
 jobs:
   build:
@@ -26,6 +24,9 @@ jobs:
     - name: Install ESP8266 Core
       run: arduino-cli core install esp8266:esp8266
 
+    - name: List contents of Arduino CLI data directory
+      run: ls -lR ~/.arduino15
+
     - name: Install Libraries
       run: |
         arduino-cli lib install "ESPAsyncTCP"
@@ -34,6 +35,18 @@ jobs:
 
     - name: Compile Sketch
       run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
+
+    - name: Create SPIFFS Image
+      run: |
+        /home/runner/.arduino15/packages/esp8266/tools/mkspiffs/3.1.0-gcc10.3-e5f9fec/mkspiffs \
+          -c ${{ github.workspace }}/sonicBot/data \
+          -b 8192 \
+          -p 256 \
+          -s 0x200000 \
+          ${{ github.workspace }}/build/spiffs.bin
+
+    - name: List contents of build directory
+      run: ls -lR ${{ github.workspace }}/build
       
     - name: Create Release
       id: create_release
@@ -41,9 +54,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        # Extrahieren Sie den Tag-Namen, indem Sie den Prefix 'refs/tags/' entfernen
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
 
@@ -53,6 +65,16 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/build/sonicBot/sonicBot.ino.bin
-        asset_name: sonicBot.ino.bin
+        asset_path: ${{ github.workspace }}/build/sonicBot.ino.bin
+        asset_name: code.bin
+        asset_content_type: application/octet-stream
+        
+    - name: Upload SPIFFS Image
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/build/spiffs.bin
+        asset_name: spiffs_image.bin
         asset_content_type: application/octet-stream
