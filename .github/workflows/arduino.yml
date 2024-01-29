@@ -2,10 +2,9 @@ name: ESP8266 Build
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-  workflow_dispatch:
+    tags:
+      - 'v*' # Löst den Workflow aus, wenn ein Tag gepusht wird, das mit 'v' beginnt
+  workflow_dispatch: # Ermöglicht das manuelle Auslösen des Workflows
 
 jobs:
   build:
