@@ -33,8 +33,8 @@ jobs:
     - name: Compile Sketch
       run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build ${{ github.workspace }}/sonicBot/sonicBot.ino
 
-    - name: Create SPIFFS Image
-      run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build --build-property "recipe.hooks.sketch.prebuild.1.pattern=python {runtime.tools.mkspiffs.path}/mkspiffs -c data -p 256 -b 8192 -s 2072576 {build.path}/spiffs.bin" ${{ github.workspace }}/sonicBot/sonicBot.ino
+    #- name: Create SPIFFS Image
+    #  run: arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ${{ github.workspace }}/build --build-property "recipe.hooks.sketch.prebuild.1.pattern=python {runtime.tools.mkspiffs.path}/mkspiffs -c data -p 256 -b 8192 -s 2072576 {build.path}/spiffs.bin" ${{ github.workspace }}/sonicBot/sonicBot.ino
 
     - name: List contents of build directory
       run: ls -lR ${{ github.workspace }}/build
@@ -60,12 +60,12 @@ jobs:
         asset_name: sonicBot.ino.bin
         asset_content_type: application/octet-stream
         
-    - name: Upload SPIFFS Image
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/build/spiffs.bin
-        asset_name: sonicBot.spiffs.bin
-        asset_content_type: application/octet-stream
+    #- name: Upload SPIFFS Image
+    #  uses: actions/upload-release-asset@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #  with:
+    #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #    asset_path: ${{ github.workspace }}/build/spiffs.bin
+    #    asset_name: sonicBot.spiffs.bin
+    #    asset_content_type: application/octet-stream
