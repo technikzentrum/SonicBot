@@ -38,14 +38,12 @@ jobs:
 
     - name: Create SPIFFS Image
       run: |
-        ARDUINO_DIR=${{ github.workspace }}/arduino  # Setzen Sie den Pfad entsprechend Ihrer Workflow-Konfiguration
-        SPIFFS_VERSION=<Ihre SPIFFS-Version>  # Ersetzen Sie dies mit der korrekten Version
-        ${ARDUINO_DIR}/packages/esp8266/tools/mkspiffs/${SPIFFS_VERSION}/mkspiffs \
-          -c ${ARDUINO_DIR}/data \
+        /home/runner/.arduino15/packages/esp8266/tools/mkspiffs/3.1.0-gcc10.3-e5f9fec/mkspiffs \
+          -c ${{ github.workspace }}/sonicBot/data \
           -b 4096 \
           -p 256 \
           -s 0x100000 \
-          ${ARDUINO_DIR}/build/esp8266.esp8266.nodemcuv2/sonicBot.ino.spiffs.bin
+          ${{ github.workspace }}/build/spiffs.bin
 
     - name: List contents of build directory
       run: ls -lR ${{ github.workspace }}/build
