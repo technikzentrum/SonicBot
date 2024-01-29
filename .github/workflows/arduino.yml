@@ -66,7 +66,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ github.workspace }}/build/sonicBot.ino.bin
-        asset_name: sonicBot.ino.bin
+        asset_name: code.bin
         asset_content_type: application/octet-stream
         
     - name: Upload SPIFFS Image
@@ -76,5 +76,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ github.workspace }}/build/spiffs.bin
-        asset_name: sonicBot.spiffs.bin
+        asset_name: spiffs_image.bin
         asset_content_type: application/octet-stream
