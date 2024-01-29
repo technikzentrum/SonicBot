@@ -24,8 +24,8 @@ jobs:
     - name: Install ESP8266 Core
       run: arduino-cli core install esp8266:esp8266
 
-    - name: List contents of Core
-      run: ls -lR
+    - name: List contents of Arduino CLI data directory
+      run: ls -lR ~/.arduino15
 
     - name: Install Libraries
       run: |
