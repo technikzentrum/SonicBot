@@ -25,7 +25,7 @@ jobs:
       run: arduino-cli core install esp8266:esp8266
 
     - name: List contents of Core
-      run: ls -lR ${{ github.workspace }}
+      run: ls -lR
 
     - name: Install Libraries
       run: |
