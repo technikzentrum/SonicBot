@@ -3,7 +3,10 @@ name: ESP8266 Build
 on:
   push:
     branches: [master]
-  workflow_dispatch: # Ermöglicht das manuelle Auslösen des Workflows
+    paths:
+      - 'SonicBot/sonicBot/**'
+  workflow_dispatch:
+
 
 jobs:
   build:
@@ -54,8 +57,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
+        tag_name: ${{ github.ref_name }}-${{ github.run_number }}
+        release_name: Release-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_number }}
         draft: false
         prerelease: false
 
