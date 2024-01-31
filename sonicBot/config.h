@@ -6,7 +6,7 @@ typedef struct
   int deadBand = 500;
   char ssid[33] = "TZL-Bot";
   char pw[65] = "";
-  boolean invertLeftMotor = false;
+  boolean invertLeftMotor = true;
   boolean invertRightMotor = false;
   boolean swapMotors = false;
   int validation = eepromMagic;
