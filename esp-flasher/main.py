@@ -1,16 +1,53 @@
 import serial.tools.list_ports
-import subprocess
 import time
-import os
-import tkinter as tk
-from tkinter import messagebox
-import traceback
 import esptool
 import sys
+import requests
+from tqdm import tqdm
 
 # Pfad zu den Dateien, die auf den ESP8266 geladen werden sollen
 SPIFFS_IMAGE_PATH = "spiffs_image.bin"
 CODE_HEX_PATH = "code.bin"
+
+def downloadImages():
+    # GitHub-Repo-Details
+    user = 'technikzentrum'
+    repo = 'SonicBot'
+    url = f'https://api.github.com/repos/{user}/{repo}/releases/latest'
+
+    try:
+        # Erhalten der neuesten Release-Daten
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        # Überprüfen, ob Assets vorhanden sind
+        if 'assets' in data:
+            for asset in data['assets']:
+                download_url = asset['browser_download_url']
+                file_name = asset['name']
+
+                # Starten des Downloads
+                print(f"Downloading {file_name}...")
+                response = requests.get(download_url, stream=True)
+
+                with open(file_name, 'wb') as file, tqdm(
+                    desc=file_name,
+                    total=int(asset['size']),
+                    unit='iB',
+                    unit_scale=True,
+                    unit_divisor=1024,
+                ) as bar:
+                    for data in response.iter_content(chunk_size=1024):
+                        size = file.write(data)
+                        bar.update(size)
+
+            print("Download completed.")
+        else:
+            print("No assets found in the latest release.")
+
+    except requests.RequestException as e:
+        print(f"Error during request to GitHub API: {e}")
 
 
 def program_esp8266(com_port):
@@ -96,6 +133,7 @@ class StdoutRedirector():
 
 
 def main():
+    downloadImages()
     global mystdout
     mystdout = StdoutRedirector()
     sys.stdout = mystdout
