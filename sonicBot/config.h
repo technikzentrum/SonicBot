@@ -8,7 +8,7 @@ typedef struct
   char pw[65] = "";
   boolean invertLeftMotor = true;
   boolean invertRightMotor = false;
-  boolean swapMotors = false;
+  boolean swapMotors = true;
   int validation = eepromMagic;
 }
 ConfigLoad;
